@@ -1,0 +1,426 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Contenedor Principal */
+.login-wrapper {
+    display: flex;
+    width: 100%;
+    max-width: 1400px;
+    height: 100vh;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+/* Panel Izquierdo Oscuro */
+.login-left {
+    flex: 1.1;
+    background: linear-gradient(135deg, #16162a 0%, #2a2b57 50%, #3f4079 100%);
+    color: white;
+    padding: 3rem 4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Decoración geométrica de fondo simulando la infraestructura */
+.login-left::before {
+    content: '';
+    position: absolute;
+    top: -10%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
+    border-radius: 50%;
+}
+.login-left::after {
+    content: '';
+    position: absolute;
+    bottom: -20%;
+    left: -10%;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(108,99,255,0.1) 0%, transparent 60%);
+    border-radius: 50%;
+}
+
+.left-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 40px;
+    height: 40px;
+    background: #5d5fef;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-text h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge-pro {
+    background: #7b7ef4;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.brand-text p {
+    font-size: 0.75rem;
+    color: #aeb1d3;
+}
+
+.status-badge {
+    background: rgba(46, 213, 115, 0.15);
+    color: #2ed573;
+    border: 1px solid rgba(46, 213, 115, 0.3);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background: #2ed573;
+    border-radius: 50%;
+}
+
+.left-content {
+    position: relative;
+    z-index: 2;
+    margin-top: -60px;
+}
+
+.left-content h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    letter-spacing: -1px;
+}
+
+.left-content p {
+    font-size: 1.1rem;
+    color: #c7c9e5;
+    max-width: 80%;
+    line-height: 1.6;
+}
+
+.left-footer {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #8b8ea9;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 20px;
+}
+
+/* Panel Derecho Blanco */
+.login-right {
+    flex: 0.9;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem 8rem;
+    background: #ffffff;
+}
+
+.login-form-container {
+    width: 100%;
+    max-width: 450px;
+    margin: 0 auto;
+}
+
+.login-right h2 {
+    font-size: 2rem;
+    color: #1a1b35;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.login-right > .login-form-container > p {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-bottom: 40px;
+    line-height: 1.5;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.form-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.forgot-link {
+    font-size: 0.8rem;
+    color: #5d5fef;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-wrapper svg {
+    position: absolute;
+    left: 14px;
+    width: 20px;
+    height: 20px;
+    color: #9ca3af;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: 14px 14px 14px 44px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #1f2937;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.input-wrapper input:focus {
+    border-color: #5d5fef;
+    box-shadow: 0 0 0 3px rgba(93, 95, 239, 0.1);
+}
+
+.input-wrapper .toggle-password {
+    position: absolute;
+    right: 14px;
+    left: auto;
+    cursor: pointer;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 30px;
+}
+
+.checkbox-group input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #5d5fef;
+}
+
+.checkbox-group label {
+    font-size: 0.85rem;
+    color: #4b5563;
+    cursor: pointer;
+}
+
+.btn-submit {
+    width: 100%;
+    background: #6b63ff;
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.3s ease;
+}
+
+.btn-submit:hover {
+    background: #5a52d5;
+}
+
+.btn-submit:disabled {
+    background: #a5a2ed;
+    cursor: not-allowed;
+}
+
+.alert-error {
+    background: #fef2f2;
+    border: 1px solid #f87171;
+    color: #b91c1c;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    text-align: center;
+    display: none;
+}
+
+.right-footer {
+    text-align: center;
+    margin-top: 60px;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.right-footer a {
+    color: #5d5fef;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.right-footer p {
+    margin-top: 6px;
+    font-size: 0.7rem;
+    color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .login-left { display: none; }
+    .login-right { flex: 1; padding: 2rem; }
+}
+
+/* Separador sutil */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 18px 0;
+    color: #9ca3af;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.divider span {
+    padding: 0 10px;
+}
+
+/* Botón de Registro Secundario */
+.btn-register {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 14px;
+    border: 1.5px solid #e0e2ec;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #4b5563;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.25s ease;
+}
+
+.btn-register:hover {
+    background-color: #f8fafc;
+    border-color: #6b63ff;
+    color: #5d5fef;
+    box-shadow: 0 2px 4px rgba(93, 95, 239, 0.08);
+}
+/* --- ESTILOS EXCLUSIVOS PARA BOTONES SECUNDARIOS Y SEPARADORES --- */
+
+/* Separador visual con texto "o" en el medio */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 20px 0;
+    color: #9ca3af;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.divider span {
+    padding: 0 14px;
+}
+
+/* Botón contorneado (Outline) para ir a registro/login */
+.btn-register {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #4b5563;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+.btn-register:hover {
+    background-color: #f8fafc;
+    border-color: #6b63ff;
+    color: #5d5fef;
+    box-shadow: 0 4px 6px -1px rgba(93, 95, 239, 0.1), 0 2px 4px -1px rgba(93, 95, 239, 0.06);
+}
