@@ -55,6 +55,7 @@ class RequerimientoController {
         $subtareas = $reqModel->listarSubtareas($id_requerimiento);
         $comentarios = $reqModel->listarComentarios($id_requerimiento);
         $evidencias = $reqModel->listarEvidencias($id_requerimiento);
+        $tecnicos = $reqModel->listarTecnicos();
         
         require_once __DIR__ . '/../view/ticket_detalle.php';
     }
@@ -100,5 +101,34 @@ class RequerimientoController {
         } else { echo json_encode(['success' => false]); }
         exit();
     }
-}
+    // AJAX: Asignar Responsable
+    public function asignarResponsable() {
+        header('Content-Type: application/json');
+        $id_req = $_POST['id_requerimiento'] ?? '';
+        $id_usr = $_POST['id_usuario'] ?? '';
+        
+        if($id_req && $id_usr) {
+            $reqModel = new Requerimiento();
+            $res = $reqModel->asignarResponsableTicket($id_req, $id_usr);
+            echo json_encode(['success' => $res]);
+        } else { echo json_encode(['success' => false]); }
+        exit();
+    }
+
+    // AJAX: Marcar Subtarea
+    public function marcarSubtarea() {
+        header('Content-Type: application/json');
+        $id_sub = $_POST['id_subtarea'] ?? '';
+        $estado = $_POST['estado'] ?? 'pendiente'; 
+        
+        if($id_sub) {
+            $reqModel = new Requerimiento();
+            $res = $reqModel->actualizarEstadoSubtarea($id_sub, $estado);
+            echo json_encode(['success' => $res]);
+        } else { 
+            echo json_encode(['success' => false, 'message' => 'Falta el ID de la subtarea']); 
+        }
+        exit();
+    }
+    }
 ?>

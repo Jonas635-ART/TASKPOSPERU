@@ -1,22 +1,19 @@
 <?php 
-// 1. Validar que la sesión exista
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 $usuario = $_SESSION['usuario'] ?? null;
 
-// 2. Validar que el controlador haya enviado el ticket
 if (!isset($ticket) || empty($ticket)) {
     echo "<h2 style='text-align:center; padding: 50px; font-family: sans-serif;'>Error: No se cargaron los datos del ticket.</h2>";
     echo "<div style='text-align:center;'><a href='index.php?action=dashboard'>Volver al Tablero</a></div>";
     exit();
 }
 
-// 3. PROTECCIÓN ANTI "UNDEFINED VARIABLE"
-// Si el controlador falló al enviar los datos, forzamos a que sean arrays vacíos para que la vista no "explote".
 if (!isset($comentarios)) { $comentarios = []; }
 if (!isset($subtareas))   { $subtareas = []; }
 if (!isset($evidencias))  { $evidencias = []; }
+if (!isset($tecnicos))    { $tecnicos = []; } // Prevención de errores para el selector
 
-// 4. Lógica de colores según estado
+// Lógica de colores según estado
 $estadoSeguro = strtolower($ticket['estado'] ?? 'pendiente');
 $bgEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-100 text-rose-700' : (($estadoSeguro === 'en proceso') ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700');
 $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estadoSeguro === 'en proceso') ? 'bg-blue-500' : 'bg-emerald-500');
@@ -31,8 +28,6 @@ $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estad
     <link rel="stylesheet" href="view/css/ticket.css">
 </head>
 <body class="flex h-screen overflow-hidden text-slate-800 antialiased bg-[#f9fafb]">
-
-    <!-- Ocultamos Sidebar en este snippet para brevedad, asume que está el mismo del Dashboard -->
 
     <!-- MAIN CONTENT -->
     <main class="flex-1 flex flex-col h-full overflow-hidden">
@@ -86,7 +81,8 @@ $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estad
                             <?php else: ?>
                                 <?php foreach ($subtareas as $sub): ?>
                                 <div class="flex items-start gap-3 p-2 hover:bg-slate-50 rounded group">
-                                    <input type="checkbox" <?= $sub['estado'] === 'terminado' ? 'checked' : '' ?> class="subtarea-check mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300">
+                                    <!-- AQUI AGREGAMOS EL DATA-ID PARA EL JAVASCRIPT -->
+                                    <input type="checkbox" data-id="<?= $sub['id_subtarea'] ?>" <?= $sub['estado'] === 'terminado' ? 'checked' : '' ?> class="subtarea-check mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 cursor-pointer">
                                     <div class="flex-1">
                                         <label class="text-sm font-medium text-slate-700 <?= $sub['estado'] === 'terminado' ? 'line-through text-slate-400' : '' ?>"><?= htmlspecialchars($sub['descripcion']) ?></label>
                                     </div>
@@ -189,18 +185,31 @@ $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estad
                                     </div>
                                 </div>
                             </div>
+                            
                             <!-- Responsable -->
                             <div>
                                 <p class="text-[10px] font-bold text-slate-400 mb-2 uppercase">Responsable Asignado</p>
                                 <?php if ($ticket['responsable']): ?>
-                                    <div class="flex items-center gap-3 bg-indigo-50 p-2 rounded-lg border border-indigo-100">
+                                    <div class="flex items-center gap-3 bg-indigo-50 p-2 rounded-lg border border-indigo-100 mb-2">
                                         <div class="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs uppercase"><?= substr($ticket['responsable'], 0, 2) ?></div>
                                         <div>
                                             <p class="text-sm font-bold text-indigo-900 leading-none"><?= htmlspecialchars($ticket['responsable']) ?></p>
                                         </div>
                                     </div>
                                 <?php else: ?>
-                                    <div class="text-xs text-slate-400 italic bg-slate-50 p-2 rounded border border-slate-100">Aún no hay técnicos asignados.</div>
+                                    <div class="text-xs text-slate-400 italic bg-slate-50 p-2 rounded border border-slate-100 mb-2">Aún no hay técnicos asignados.</div>
+                                <?php endif; ?>
+
+                                <!-- AQUÍ AGREGAMOS EL SELECTOR PARA ASIGNAR/CAMBIAR RESPONSABLE -->
+                                <?php if ($usuario['rol'] !== 'cliente'): ?>
+                                <div class="mt-3 pt-3 border-t border-slate-100">
+                                    <select id="selResponsable" data-ticket="<?= $ticket['id_requerimiento'] ?>" class="w-full bg-white border border-slate-200 text-xs font-semibold text-slate-700 rounded-lg p-2 outline-none focus:border-indigo-500 cursor-pointer">
+                                        <option value="">-- Cambiar / Asignar responsable --</option>
+                                        <?php foreach($tecnicos as $tec): ?>
+                                            <option value="<?= $tec['id_usuario'] ?>"><?= htmlspecialchars($tec['nombre']) ?> (<?= ucfirst($tec['rol']) ?>)</option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                                 <?php endif; ?>
                             </div>
                         </div>

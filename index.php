@@ -70,7 +70,7 @@ switch ($action) {
         $reqController = new RequerimientoController();
         $reqController->actualizarEstado();
         break;
-    // 3. Cerrar sesión de forma segura
+    // Cerrar sesión de forma segura
     case 'logout':
         // Destruir todas las variables de sesión
         session_unset();
@@ -86,11 +86,17 @@ switch ($action) {
         header("Location: index.php?action=login");
         exit();
         break;
-    case 'api_nuevo_requerimiento':
+    
+    case 'api_asignar_responsable':
         require_once __DIR__ . '/controller/RequerimientoController.php';
         $reqController = new RequerimientoController();
-        $reqController->procesarNuevo();
-    break;
+        $reqController->asignarResponsable();
+        break;
+    case 'api_marcar_subtarea':
+        require_once __DIR__ . '/controller/RequerimientoController.php';
+        $reqController = new RequerimientoController();
+        $reqController->marcarSubtarea();
+        break;
     
     
     

@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 1. Agregar Subtarea
+    // 1. Añadir Nueva Subtarea
     const inputSubtarea = document.getElementById('inputSubtarea');
     if (inputSubtarea) {
         inputSubtarea.addEventListener('keypress', async (e) => {
@@ -17,13 +17,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
                 
                 if (data.success) {
-                    window.location.reload(); // Recarga simple para reflejar cambios
+                    window.location.reload(); 
                 }
             }
         });
     }
 
-    // 2. Agregar Comentario
+    // 2. Marcar/Desmarcar Subtarea (Guardar Estado)
+    document.body.addEventListener('change', async (e) => {
+        // Detectar si el elemento que cambió es un checkbox de subtarea
+        if (e.target.classList.contains('subtarea-check')) {
+            const idSubtarea = e.target.getAttribute('data-id');
+            const nuevoEstado = e.target.checked ? 'terminado' : 'pendiente';
+
+            // Si es una tarea recién agregada sin ID (por precaución)
+            if (!idSubtarea) {
+                alert('Refresca la página primero para sincronizar la tarea con la base de datos.');
+                e.target.checked = !e.target.checked;
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('id_subtarea', idSubtarea);
+            formData.append('estado', nuevoEstado);
+
+            try {
+                const res = await fetch('index.php?action=api_marcar_subtarea', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if (data.success) {
+                    // Actualizar estilos visuales (tachar el texto)
+                    const label = e.target.nextElementSibling.querySelector('label');
+                    if (nuevoEstado === 'terminado') {
+                        label.classList.add('line-through', 'text-slate-400');
+                    } else {
+                        label.classList.remove('line-through', 'text-slate-400');
+                    }
+                } else {
+                    alert('Hubo un error al guardar en la base de datos.');
+                    e.target.checked = !e.target.checked; // Revertir el check visual
+                }
+            } catch (error) {
+                console.error("Error de conexión: ", error);
+                e.target.checked = !e.target.checked;
+            }
+        }
+    });
+
+    // 3. Añadir Comentario
     const btnComentar = document.getElementById('btnComentar');
     const txtComentario = document.getElementById('txtComentario');
     if (btnComentar && txtComentario) {
@@ -33,7 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (msg === '') return;
 
             const idTicket = btnComentar.getAttribute('data-ticket');
-            
             const formData = new FormData();
             formData.append('id_requerimiento', idTicket);
             formData.append('mensaje', msg);
@@ -53,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. Actualizar Estado y Prioridad
+    // 4. Actualizar Estado General del Ticket
     const btnActualizarEstado = document.getElementById('btnActualizarEstado');
     if (btnActualizarEstado) {
         btnActualizarEstado.addEventListener('click', async (e) => {
@@ -77,6 +117,30 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 btnActualizarEstado.textContent = 'Guardar Cambios';
                 alert('Error al guardar cambios');
+            }
+        });
+    }
+
+    // 5. Asignar Responsable
+    const selResponsable = document.getElementById('selResponsable');
+    if (selResponsable) {
+        selResponsable.addEventListener('change', async (e) => {
+            const idUsuario = e.target.value;
+            if (!idUsuario) return;
+
+            const idTicket = selResponsable.getAttribute('data-ticket');
+            
+            const formData = new FormData();
+            formData.append('id_requerimiento', idTicket);
+            formData.append('id_usuario', idUsuario);
+
+            const res = await fetch('index.php?action=api_asignar_responsable', { method: 'POST', body: formData });
+            const data = await res.json();
+            
+            if (data.success) {
+                window.location.reload(); 
+            } else {
+                alert('Error al asignar responsable');
             }
         });
     }

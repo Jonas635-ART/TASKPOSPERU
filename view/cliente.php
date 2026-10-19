@@ -181,10 +181,12 @@ if (!isset($requerimientos)) $requerimientos = [];
                                 $bgPrio = ($prio === 'alta' || $prio === 'critica') ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600';
                             ?>
                             <tr class="hover:bg-slate-50/50 transition">
-                                <a href="index.php?action=ver_ticket&id=<?= $req['id_requerimiento'] ?>" class="..."> </a>
+                                <!-- ID del ticket -->
                                 <td class="p-4 pl-5 align-top">
                                     <span class="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">#TK-<?= htmlspecialchars($req['id_requerimiento']) ?></span>
                                 </td>
+
+                                <!-- Título y Descripción -->
                                 <td class="p-4 align-top max-w-md">
                                     <div class="flex items-center gap-2 mb-1">
                                         <p class="font-bold text-slate-800"><?= htmlspecialchars($req['titulo']) ?></p>
@@ -194,24 +196,56 @@ if (!isset($requerimientos)) $requerimientos = [];
                                         <?= htmlspecialchars($req['descripcion_tecnica']) ?>
                                     </p>
                                 </td>
+
+                                <!-- Fecha -->
                                 <td class="p-4 align-top text-xs">
                                     <p class="font-medium text-slate-800"><?= date('d M Y', strtotime($req['fecha_creacion'])) ?></p>
                                     <p class="text-slate-400 mt-0.5"><?= date('h:i A', strtotime($req['fecha_creacion'])) ?></p>
                                 </td>
+
+                                <!-- Estado -->
                                 <td class="p-4 align-top">
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full <?= $bgEstado ?> border text-xs font-semibold">
                                         <span class="w-1.5 h-1.5 rounded-full <?= $dotEstado ?>"></span> <?= ucfirst($estado) ?>
                                     </span>
                                 </td>
+
+                                <!-- Asignación -->
                                 <td class="p-4 align-top">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-6 h-6 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-xs">
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                    <?php if (!empty($req['responsable'])): ?>
+                                        <!-- Muestra el responsable cuando ya está asignado -->
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold uppercase border border-indigo-200">
+                                                <?= substr(htmlspecialchars($req['responsable']), 0, 2) ?>
+                                            </div>
+                                            <div class="text-xs">
+                                                <p class="font-semibold text-slate-700"><?= htmlspecialchars($req['responsable']) ?></p>
+                                                <p class="text-emerald-600 text-[10px] font-medium">Asignado</p>
+                                            </div>
                                         </div>
-                                        <div class="text-xs">
-                                            <p class="font-semibold text-slate-500">En evaluación</p>
+                                    <?php else: ?>
+                                        <!-- Estado por defecto cuando aún no tiene asignación -->
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-xs">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                            </div>
+                                            <div class="text-xs">
+                                                <p class="font-semibold text-slate-500">En evaluación</p>
+                                            </div>
                                         </div>
-                                    </div>
+                                    <?php endif; ?>
+                                </td>
+
+                                <!-- Columna de Acción (Enlace al detalle) -->
+                                <td class="p-4 align-top text-center">
+                                    <a href="index.php?action=ver_ticket&id=<?= $req['id_requerimiento'] ?>" 
+                                    class="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 text-slate-600 text-xs font-semibold rounded-md shadow-sm transition inline-flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        Detalle
+                                    </a>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

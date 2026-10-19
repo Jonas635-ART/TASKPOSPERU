@@ -32,16 +32,18 @@ class Requerimiento {
     // Listar tickets del usuario actual
     public function listarPorUsuario($id_solicitante) {
         try {
-            $sql = "SELECT id_requerimiento, titulo, descripcion_tecnica, prioridad, estado, fecha_creacion 
-                    FROM requerimientos 
-                    WHERE id_solicitante = :id_solicitante 
-                    ORDER BY fecha_creacion DESC";
+            $sql = "SELECT r.*, u2.nombre AS responsable
+                    FROM requerimientos r
+                    LEFT JOIN requerimientos_responsables rr ON r.id_requerimiento = rr.id_requerimiento
+                    LEFT JOIN usuarios u2 ON rr.id_usuario = u2.id_usuario
+                    WHERE r.id_solicitante = :id_solicitante 
+                    ORDER BY r.fecha_creacion DESC";
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([':id_solicitante' => $id_solicitante]);
-            return $stmt->fetchAll();
-        } catch (PDOException $e) {
-            error_log("Error al listar requerimientos: " . $e->getMessage());
-            return [];
+            $stmt->execute([':id_solicitante' => (int)$id_solicitante]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { 
+            error_log("Error en listarPorUsuario: " . $e->getMessage());
+            return []; 
         }
     }
     // Obtener estadísticas globales para el dashboard del Developer/Admin
@@ -154,6 +156,34 @@ class Requerimiento {
             $sql = "INSERT INTO comentarios (id_requerimiento, id_usuario, mensaje) VALUES (:id_req, :id_usr, :msg)";
             $stmt = $this->pdo->prepare($sql);
             return $stmt->execute([':id_req' => $id_requerimiento, ':id_usr' => $id_usuario, ':msg' => $mensaje]);
+        } catch (PDOException $e) { return false; }
+    }
+    // Listar usuarios que son desarrolladores o administradores para poder asignarles tickets
+    public function listarTecnicos() {
+        try {
+            $sql = "SELECT id_usuario, nombre, correo, rol FROM usuarios WHERE rol IN ('admin', 'developer') ORDER BY nombre ASC";
+            $stmt = $this->pdo->query($sql);
+            return $stmt->fetchAll();
+        } catch (PDOException $e) { return []; }
+    }
+
+    // Asignar un responsable principal al requerimiento
+    public function asignarResponsableTicket($id_requerimiento, $id_usuario) {
+        try {
+            // Primero eliminamos si ya tenía un responsable previo para evitar duplicados
+            $this->pdo->prepare("DELETE FROM requerimientos_responsables WHERE id_requerimiento = ?")->execute([$id_requerimiento]);
+            
+            // Insertamos el nuevo responsable
+            $sql = "INSERT INTO requerimientos_responsables (id_requerimiento, id_usuario) VALUES (?, ?)";
+            return $this->pdo->prepare($sql)->execute([$id_requerimiento, $id_usuario]);
+        } catch (PDOException $e) { return false; }
+    }
+
+    // Cambiar estado de subtarea (Terminado / Pendiente)
+    public function actualizarEstadoSubtarea($id_subtarea, $estado) {
+        try {
+            $sql = "UPDATE subtareas SET estado = ?, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id_subtarea = ?";
+            return $this->pdo->prepare($sql)->execute([$estado, $id_subtarea]);
         } catch (PDOException $e) { return false; }
     }
 }
