@@ -1,0 +1,23 @@
+/* Custom Scrollbars */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+/* Efectos Drag and Drop */
+.kanban-card.dragging {
+    opacity: 0.4;
+    transform: scale(0.98);
+}
+
+.kanban-column.drag-over {
+    background-color: #e0e7ff !important; /* indigo-100 */
+    border-style: dashed !important;
+}

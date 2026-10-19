@@ -36,8 +36,7 @@
 
             <div class="left-footer">
                 <div style="display: flex; gap: 20px;">
-                    <span>✓ Certificación ISO/IEC 27001</span>
-                    <span>✓ SOC 2 Tipo II Verificado</span>
+
                 </div>
                 <div>v1.0.0-enterprise</div>
             </div>
@@ -104,7 +103,7 @@
 
                 <div class="right-footer">
                     ¿Aún no tienes acceso corporativo? <a href="#">Contactar a IT / Soporte</a>
-                    <p>Protegido por políticas de acceso biométrico Zero-Trust y cifrado AES-256.</p>
+                    <p>Protegido por políticas de seguridado y cifrado.</p>
                 </div>
             </div>
         </div>

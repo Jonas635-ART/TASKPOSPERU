@@ -69,7 +69,17 @@ switch ($action) {
         require_once __DIR__ . '/controller/RequerimientoController.php';
         $reqController = new RequerimientoController();
         $reqController->actualizarEstado();
-        break;
+    break;
+    case 'kanban':
+        require_once __DIR__ . '/controller/RequerimientoController.php';
+        $reqController = new RequerimientoController();
+        $reqController->verKanban();
+    break;
+    
+
+
+
+
     // Cerrar sesión de forma segura
     case 'logout':
         // Destruir todas las variables de sesión

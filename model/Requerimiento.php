@@ -41,10 +41,10 @@ class Requerimiento {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([':id_solicitante' => (int)$id_solicitante]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) { 
-            error_log("Error en listarPorUsuario: " . $e->getMessage());
-            return []; 
-        }
+            } catch (PDOException $e) { 
+                error_log("Error en listarPorUsuario: " . $e->getMessage());
+                return []; 
+            }
     }
     // Obtener estadísticas globales para el dashboard del Developer/Admin
     public function obtenerEstadisticasGlobales() {
@@ -71,7 +71,7 @@ class Requerimiento {
         }
     }
 
-    // Listar todos los tickets con sus relaciones para la tabla principal
+
     public function listarTodos() {
         try {
             $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado, 
@@ -133,7 +133,6 @@ class Requerimiento {
         } catch (PDOException $e) { return []; }
     }
 
-    // --- ACCIONES AJAX ---
 
     public function actualizarEstadoTicket($id_requerimiento, $nuevo_estado, $nueva_prioridad) {
         try {
@@ -185,6 +184,27 @@ class Requerimiento {
             $sql = "UPDATE subtareas SET estado = ?, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id_subtarea = ?";
             return $this->pdo->prepare($sql)->execute([$estado, $id_subtarea]);
         } catch (PDOException $e) { return false; }
+    }
+
+    // Obtener tickets formateados para el tablero Kanban con conteo de subtareas
+    public function listarParaKanban() {
+        try {
+            $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado, r.fecha_creacion,
+                           u1.nombre AS solicitante,
+                           u2.nombre AS responsable,
+                           (SELECT COUNT(*) FROM subtareas s WHERE s.id_requerimiento = r.id_requerimiento) AS total_subtareas,
+                           (SELECT COUNT(*) FROM subtareas s WHERE s.id_requerimiento = r.id_requerimiento AND s.estado = 'terminado') AS subtareas_completadas
+                    FROM requerimientos r
+                    INNER JOIN usuarios u1 ON r.id_solicitante = u1.id_usuario
+                    LEFT JOIN requerimientos_responsables rr ON r.id_requerimiento = rr.id_requerimiento
+                    LEFT JOIN usuarios u2 ON rr.id_usuario = u2.id_usuario
+                    ORDER BY r.id_requerimiento DESC";
+            $stmt = $this->pdo->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error en listarParaKanban: " . $e->getMessage());
+            return [];
+        }
     }
 }
 ?>

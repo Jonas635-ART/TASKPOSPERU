@@ -130,5 +130,33 @@ class RequerimientoController {
         }
         exit();
     }
+    public function verKanban() {
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+        if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] === 'cliente') {
+            header("Location: index.php?action=dashboard");
+            exit();
+        }
+
+        $reqModel = new Requerimiento();
+        $todosTickets = $reqModel->listarParaKanban();
+
+        // Agrupar requerimientos en los tres contenedores Kanban
+        $kanban = [
+            'pendiente'  => [],
+            'en proceso' => [],
+            'terminado'  => []
+        ];
+
+        foreach ($todosTickets as $t) {
+            $est = strtolower($t['estado']);
+            if (array_key_exists($est, $kanban)) {
+                $kanban[$est][] = $t;
+            } else {
+                $kanban['pendiente'][] = $t;
+            }
+        }
+
+        require_once __DIR__ . '/../view/kanban.php';
+    }
     }
 ?>
