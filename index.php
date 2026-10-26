@@ -75,9 +75,38 @@ switch ($action) {
         $reqController = new RequerimientoController();
         $reqController->verKanban();
     break;
-    
+    case 'exportar_excel':
+        require_once __DIR__ . '/controller/RequerimientoController.php';
+        $controller = new RequerimientoController();
+        $controller->exportarExcel();
+        break;
 
-
+    case 'nuevo_ticket':
+        require_once __DIR__ . '/controller/RequerimientoController.php';
+        $controller = new RequerimientoController();
+        $controller->nuevoTicket();
+        break;
+    case 'guardar_ticket':
+        require_once __DIR__ . '/controller/RequerimientoController.php';
+        $controller = new RequerimientoController();
+        $controller->guardarTicket();
+        break;
+    case 'proyectos':
+        require_once __DIR__ . '/controller/ProyectoController.php';
+        $controller = new ProyectoController();
+        $controller->index();
+        break;
+        case 'guardar_proyecto':
+        require_once __DIR__ . '/controller/ProyectoController.php';
+        $controller = new ProyectoController();
+        $controller->guardar();
+        break;
+        
+    case 'eliminar_proyecto':
+        require_once __DIR__ . '/controller/ProyectoController.php';
+        $controller = new ProyectoController();
+        $controller->eliminar();
+        break;
 
 
     // Cerrar sesión de forma segura

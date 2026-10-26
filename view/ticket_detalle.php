@@ -10,10 +10,21 @@ if (!isset($ticket) || empty($ticket)) {
 
 if (!isset($comentarios)) { $comentarios = []; }
 if (!isset($subtareas))   { $subtareas = []; }
-if (!isset($evidencias))  { $evidencias = []; }
-if (!isset($tecnicos))    { $tecnicos = []; } // Prevención de errores para el selector
+if (!isset($tecnicos))    { $tecnicos = []; } 
 
-// Lógica de colores según estado
+
+$evidencias = [];
+
+$patron_busqueda = __DIR__ . "/../uploads/tk_" . $ticket['id_requerimiento'] . "_*.*";
+$archivos_encontrados = glob($patron_busqueda);
+
+if ($archivos_encontrados) {
+    foreach ($archivos_encontrados as $ruta_absoluta) {
+        $nombre_archivo = basename($ruta_absoluta);
+        $evidencias[] = ['ruta_archivo' => 'uploads/' . $nombre_archivo];
+    }
+}
+
 $estadoSeguro = strtolower($ticket['estado'] ?? 'pendiente');
 $bgEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-100 text-rose-700' : (($estadoSeguro === 'en proceso') ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700');
 $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estadoSeguro === 'en proceso') ? 'bg-blue-500' : 'bg-emerald-500');
@@ -68,6 +79,30 @@ $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estad
                         <div class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap"><?= htmlspecialchars($ticket['descripcion_tecnica']) ?></div>
                     </div>
 
+                    <!-- Evidencias Adjuntas -->
+                    <?php if (!empty($evidencias)): ?>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            Evidencias Adjuntas
+                        </h2>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <?php foreach ($evidencias as $evidencia): ?>
+                                <a href="<?= htmlspecialchars($evidencia['ruta_archivo']) ?>" target="_blank" class="block group relative rounded-lg overflow-hidden border border-slate-200 hover:border-indigo-400 transition-colors shadow-sm">
+                                    <img src="<?= htmlspecialchars($evidencia['ruta_archivo']) ?>" alt="Evidencia del ticket" class="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-105">
+                                    <div class="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/30 transition-colors flex items-center justify-center">
+                                        <span class="bg-slate-900/80 text-white text-xs font-bold px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                                            Ver original
+                                        </span>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- Subtareas -->
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                         <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
@@ -81,7 +116,6 @@ $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estad
                             <?php else: ?>
                                 <?php foreach ($subtareas as $sub): ?>
                                 <div class="flex items-start gap-3 p-2 hover:bg-slate-50 rounded group">
-                                    <!-- AQUI AGREGAMOS EL DATA-ID PARA EL JAVASCRIPT -->
                                     <input type="checkbox" data-id="<?= $sub['id_subtarea'] ?>" <?= $sub['estado'] === 'terminado' ? 'checked' : '' ?> class="subtarea-check mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 cursor-pointer">
                                     <div class="flex-1">
                                         <label class="text-sm font-medium text-slate-700 <?= $sub['estado'] === 'terminado' ? 'line-through text-slate-400' : '' ?>"><?= htmlspecialchars($sub['descripcion']) ?></label>

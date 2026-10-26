@@ -13,6 +13,10 @@ class RequerimientoController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id_solicitante      = $_SESSION['usuario']['id'];
+            
+            // 1. Capturar el id_proyecto (puede ser null si es un cliente o no lo eligió)
+            $id_proyecto         = !empty($_POST['id_proyecto']) ? (int)$_POST['id_proyecto'] : null;
+            
             $titulo              = trim($_POST['titulo'] ?? '');
             $prioridad           = trim($_POST['prioridad'] ?? '');
             $descripcion_tecnica = trim($_POST['descripcion_tecnica'] ?? '');
@@ -29,9 +33,44 @@ class RequerimientoController {
             }
 
             $reqModel = new Requerimiento();
-            $resultado = $reqModel->registrar($id_solicitante, $titulo, $prioridad, $descripcion_tecnica);
+            
+            // 2. Ejecutar pasando los 5 parámetros en el orden EXACTO del modelo
+            $id_req = $reqModel->registrar($id_proyecto, $titulo, $descripcion_tecnica, $prioridad, $id_solicitante);
 
-            echo json_encode($resultado);
+            // 3. Formatear la respuesta JSON según el resultado
+            if ($id_req) {
+                // ==========================================
+                // NUEVO: Procesar Evidencias Físicas
+                // ==========================================
+                if (!empty($_FILES['evidencias']['name'][0])) {
+                    $upload_dir = __DIR__ . '/../uploads/';
+                    if (!is_dir($upload_dir)) { mkdir($upload_dir, 0777, true); }
+                    
+                    $total_archivos = min(count($_FILES['evidencias']['name']), 3); 
+                    
+                    for ($i = 0; $i < $total_archivos; $i++) {
+                        if ($_FILES['evidencias']['error'][$i] === 0) {
+                            $ext = strtolower(pathinfo($_FILES['evidencias']['name'][$i], PATHINFO_EXTENSION));
+                            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                                $nombre_archivo = "tk_{$id_req}_" . time() . "_{$i}.{$ext}";
+                                move_uploaded_file($_FILES['evidencias']['tmp_name'][$i], $upload_dir . $nombre_archivo);
+                            }
+                        }
+                    }
+                }
+                // ==========================================
+
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Requerimiento registrado correctamente.',
+                    'id_requerimiento' => $id_req
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Error al registrar el requerimiento en la base de datos.'
+                ]);
+            }
             exit();
         }
     }
@@ -58,6 +97,82 @@ class RequerimientoController {
         $tecnicos = $reqModel->listarTecnicos();
         
         require_once __DIR__ . '/../view/ticket_detalle.php';
+    }
+    // Procesar el formulario de nuevo ticket
+    public function guardarTicket() {
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            require_once __DIR__ . '/../model/Requerimiento.php';
+            $reqModel = new Requerimiento();
+            
+            // Capturar el proyecto de forma opcional
+            $id_proyecto = !empty($_POST['id_proyecto']) ? (int)$_POST['id_proyecto'] : null;
+            
+            $titulo = $_POST['titulo'] ?? '';
+            $descripcion = $_POST['descripcion_tecnica'] ?? '';
+            $prioridad = $_POST['prioridad'] ?? 'media';
+            $id_responsable = !empty($_POST['id_responsable']) ? (int)$_POST['id_responsable'] : null;
+            $subtareas = $_POST['subtareas'] ?? []; 
+            $id_solicitante = $_SESSION['usuario']['id'];
+
+            if (!empty(trim($titulo)) && !empty(trim($descripcion))) {
+                
+                // 1. Usar tu función 'registrar' con id_proyecto
+                $id_req = $reqModel->registrar($id_proyecto, $titulo, $descripcion, $prioridad, $id_solicitante);
+                
+                if ($id_req) {
+                    
+                    // 2. Usar tu función 'asignarResponsableTicket'
+                    if ($id_responsable) {
+                        $reqModel->asignarResponsableTicket($id_req, $id_responsable);
+                    }
+
+                    // 3. Usar tu función 'insertarSubtarea'
+                    foreach ($subtareas as $subtarea) {
+                        if (!empty(trim($subtarea))) {
+                            $reqModel->insertarSubtarea($id_req, $subtarea);
+                        }
+                    }
+
+                    // 4. Procesar Evidencias (Límite 3 imágenes)
+                    if (!empty($_FILES['evidencias']['name'][0])) {
+                        $upload_dir = __DIR__ . '/../uploads/';
+                        if (!is_dir($upload_dir)) { mkdir($upload_dir, 0777, true); }
+                        
+                        $total_archivos = min(count($_FILES['evidencias']['name']), 3); 
+                        
+                        for ($i = 0; $i < $total_archivos; $i++) {
+                            if ($_FILES['evidencias']['error'][$i] === 0) {
+                                $ext = strtolower(pathinfo($_FILES['evidencias']['name'][$i], PATHINFO_EXTENSION));
+                                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                                    $nombre_archivo = "tk_{$id_req}_" . time() . "_{$i}.{$ext}";
+                                    
+                                    // Solo movemos el archivo a la carpeta uploads. Ya no guardamos en BD.
+                                    move_uploaded_file($_FILES['evidencias']['tmp_name'][$i], $upload_dir . $nombre_archivo);
+                                }
+                            }
+                        }
+                    }
+
+                    header("Location: index.php?action=dashboard");
+                    exit();
+                }
+            }
+        }
+    }
+
+    // Mostrar el formulario para crear un nuevo ticket
+    public function nuevoTicket() {
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+        
+        require_once __DIR__ . '/../model/Requerimiento.php';
+        $reqModel = new Requerimiento();
+        
+        // Usamos tu función original para obtener admins y developers
+        $tecnicos = $reqModel->listarTecnicos(); 
+        
+        require_once __DIR__ . '/../view/nuevo_ticket.php';
     }
 
     // Funciones AJAX para interactuar con la vista de detalle
@@ -157,6 +272,63 @@ class RequerimientoController {
         }
 
         require_once __DIR__ . '/../view/kanban.php';
+    }
+    public function exportarExcel() {
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+        
+        // Validación de seguridad: Solo Admin puede exportar
+        if (!isset($_SESSION['usuario']) || strtolower($_SESSION['usuario']['rol']) !== 'admin') {
+            header("Location: index.php?action=dashboard");
+            exit();
+        }
+
+        // Cargar los datos desde el modelo
+        require_once __DIR__ . '/../model/Requerimiento.php';
+        $reqModel = new Requerimiento();
+        $requerimientos = $reqModel->listarTodos();
+
+        // Cargar PhpSpreadsheet
+        require_once __DIR__ . '/../vendor/autoload.php';
+        
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Requerimientos');
+
+        // Definir Cabeceras
+        $cabeceras = ['A1' => 'ID Ticket', 'B1' => 'Título', 'C1' => 'Prioridad', 'D1' => 'Estado', 'E1' => 'Solicitante', 'F1' => 'Responsable Asignado', 'G1' => 'Fecha de Creación'];
+        foreach ($cabeceras as $celda => $texto) {
+            $sheet->setCellValue($celda, $texto);
+            $sheet->getStyle($celda)->getFont()->setBold(true);
+        }
+
+        // Llenar datos
+        $fila = 2;
+        foreach ($requerimientos as $req) {
+            $fecha = isset($req['fecha_creacion']) ? date('d/m/Y H:i', strtotime($req['fecha_creacion'])) : 'N/A';
+            
+            $sheet->setCellValue('A' . $fila, '#TK-' . $req['id_requerimiento']);
+            $sheet->setCellValue('B' . $fila, $req['titulo']);
+            $sheet->setCellValue('C' . $fila, strtoupper($req['prioridad']));
+            $sheet->setCellValue('D' . $fila, strtoupper($req['estado']));
+            $sheet->setCellValue('E' . $fila, $req['solicitante']);
+            $sheet->setCellValue('F' . $fila, empty($req['responsable']) ? 'Sin Asignar' : $req['responsable']);
+            $sheet->setCellValue('G' . $fila, $fecha);
+            $fila++;
+        }
+
+        // Ajustar el tamaño de las columnas automáticamente
+        foreach(range('A','G') as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        }
+
+        // Configurar cabeceras HTTP para forzar descarga del Excel
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="Reporte_Tickets_PosPeru.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save('php://output');
+        exit;
     }
     }
 ?>

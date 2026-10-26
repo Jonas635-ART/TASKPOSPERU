@@ -31,9 +31,61 @@ if (!isset($requerimientos)) $requerimientos = [];
         
         <div class="flex items-center gap-5">
             <!-- Icono Notificación -->
-            <button class="relative text-slate-400 hover:text-indigo-600 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-            </button>
+                       <!-- Campana de Notificaciones y Botón de Acción -->
+<div class="flex items-center gap-4">
+    
+    <!-- Contenedor Relativo para la Campana y el Menú Desplegable -->
+    <div class="relative">
+        <button id="btnNotificaciones" class="relative text-slate-400 hover:text-slate-600 transition focus:outline-none" title="Ver Notificaciones">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+            
+            <!-- El punto rojo SOLO aparece si hay notificaciones nuevas -->
+            <?php if (!empty($notificaciones)): ?>
+                <span class="absolute -top-1 -right-1 w-2 h-2 bg-rose-500 rounded-full border border-white animate-pulse"></span>
+            <?php endif; ?>
+        </button>
+
+        <!-- Mini Ventana Desplegable -->
+        <div id="menuNotificaciones" class="hidden absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden z-50 transform origin-top-right transition-all">
+            <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Notificaciones</span>
+                <?php if (!empty($notificaciones)): ?>
+                    <span class="bg-rose-100 text-rose-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase"><?= count($notificaciones) ?> Nuevas</span>
+                <?php endif; ?>
+            </div>
+            
+            <div class="max-h-72 overflow-y-auto custom-scrollbar">
+                <?php if (empty($notificaciones)): ?>
+                    <div class="px-4 py-8 text-center text-sm text-slate-500 font-medium">No hay notificaciones recientes.</div>
+                <?php else: ?>
+                    <?php foreach($notificaciones as $notif): 
+                        // Verifica el rol en tiempo real para pintar el diseño
+                        $esCliente = (strtolower($_SESSION['usuario']['rol']) === 'cliente');
+                        $tituloNotif = $esCliente ? 'Ticket Resuelto' : 'Nuevo Ticket Registrado';
+                        $colorIcono = $esCliente ? 'text-emerald-500 bg-emerald-50' : 'text-indigo-500 bg-indigo-50';
+                        $fechaFormato = date('d M Y - h:i a', strtotime($notif['fecha_actualizacion'] ?? $notif['fecha_creacion']));
+                    ?>
+                        <a href="index.php?action=ver_ticket&id=<?= $notif['id_requerimiento'] ?>" class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 border-b border-slate-50 transition cursor-pointer group">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 <?= $colorIcono ?>">
+                                <?php if ($esCliente): ?>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <?php else: ?>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <?php endif; ?>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-slate-800 mb-0.5 group-hover:text-indigo-600 transition"><?= $tituloNotif ?></p>
+                                <p class="text-[11px] text-slate-500 truncate mb-1"><span class="font-semibold">TK-<?= $notif['id_requerimiento'] ?>:</span> <?= htmlspecialchars($notif['titulo']) ?></p>
+                                <p class="text-[9px] font-bold text-slate-400"><?= $fechaFormato ?></p>
+                            </div>
+                        </a>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    
+</div>
             
             <!-- Perfil Usuario -->
             <div class="flex items-center gap-3 pl-5 border-l border-slate-200">
@@ -87,7 +139,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                 <!-- Alerta para mensajes JS -->
                 <div id="alertaReq" class="hidden px-4 py-3 rounded-lg text-sm font-semibold mb-5 flex items-center gap-2"></div>
 
-                <form id="formRequerimiento" class="space-y-5">
+                <form id="formRequerimiento" enctype="multipart/form-data" class="space-y-5">
                     <!-- Título -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Título del Requerimiento <span class="text-rose-500">*</span></label>
@@ -119,6 +171,12 @@ if (!isset($requerimientos)) $requerimientos = [];
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Descripción Técnica <span class="text-rose-500">*</span></label>
                         <textarea name="descripcion_tecnica" required rows="4" placeholder="Describe detalladamente el incidente, pasos para reproducirlo o errores mostrados..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition resize-none"></textarea>
                     </div>
+                    <div class="mt-6 mb-2">
+    <label class="block text-sm font-bold text-slate-700 mb-2">Capturas de Pantalla / Evidencias <span class="text-slate-400 font-normal text-xs">(Opcional)</span></label>
+    <p class="text-[10px] text-slate-500 mb-2">Puedes subir hasta un máximo de 3 imágenes (JPG, PNG).</p>
+    <input type="file" name="evidencias[]" multiple accept="image/jpeg, image/png, image/webp" onchange="if(this.files.length > 3) { alert('Solo puedes subir un máximo de 3 imágenes.'); this.value = ''; }"
+           class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition cursor-pointer border border-slate-200 rounded-lg bg-white p-1">
+</div>
 
                     <!-- Botones de Acción -->
                     <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
@@ -256,6 +314,27 @@ if (!isset($requerimientos)) $requerimientos = [];
         </div>
         
     </main>
+     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnNotif = document.getElementById('btnNotificaciones');
+            const menuNotif = document.getElementById('menuNotificaciones');
+
+            if (btnNotif && menuNotif) {
+                // Abrir/Cerrar al dar clic en la campana
+                btnNotif.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Evita que el clic se propague al document
+                    menuNotif.classList.toggle('hidden');
+                });
+
+                // Cerrar al hacer clic en cualquier parte fuera de la ventana de notificaciones
+                document.addEventListener('click', (e) => {
+                    if (!menuNotif.contains(e.target) && !btnNotif.contains(e.target)) {
+                        menuNotif.classList.add('hidden');
+                    }
+                });
+            }
+        });
+        </script>
 
     <!-- Archivo JS separado -->
     <script src="view/javascript/cliente.js"></script>

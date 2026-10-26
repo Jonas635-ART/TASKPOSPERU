@@ -33,7 +33,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                         Panel Principal
                     </a>
-                    <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                    <a href="index.php?action=proyectos" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
                         Proyectos
                     </a>
@@ -73,20 +73,86 @@ if (!isset($requerimientos)) $requerimientos = [];
             </div>
             
             <div class="flex items-center gap-4 ml-6">
-                <div class="hidden lg:flex items-center gap-3">
-                    <span class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-orange-50 text-orange-600 border border-orange-100 text-xs font-semibold">
-                        <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> <?= $estadisticas['en_proceso'] ?> En Proceso
-                    </span>
-                    <span class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-rose-50 text-rose-600 border border-rose-100 text-xs font-semibold">
-                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 3 Críticos
-                    </span>
-                </div>
-                <div class="h-6 w-px bg-slate-200 mx-2"></div>
-                <button class="relative text-slate-400 hover:text-slate-600 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
-                </button>
+            <div class="hidden lg:flex items-center gap-3">
+                <!-- Indicador: En Proceso -->
+                <?php if (!empty($enProceso)): ?>
+                <span class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-orange-50 text-orange-600 border border-orange-100 text-xs font-semibold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> <?= $enProceso ?> En Proceso
+                </span>
+                <?php endif; ?>
+
+                <!-- Indicador: Críticos -->
+                <?php if (!empty($criticos)): ?>
+                <span class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-rose-50 text-rose-600 border border-rose-100 text-xs font-semibold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> <?= $criticos ?> Críticos
+                </span>
+                <?php endif; ?>
             </div>
+            
+            <div class="h-6 w-px bg-slate-200 mx-2"></div>
+            
+            <!-- Campana de Notificaciones -->
+            <!-- Campana de Notificaciones y Botón de Acción -->
+<div class="flex items-center gap-4">
+    
+    <!-- Contenedor Relativo para la Campana y el Menú Desplegable -->
+    <div class="relative">
+        <button id="btnNotificaciones" class="relative text-slate-400 hover:text-slate-600 transition focus:outline-none" title="Ver Notificaciones">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+            
+            <!-- El punto rojo SOLO aparece si hay notificaciones nuevas -->
+            <?php if (!empty($notificaciones)): ?>
+                <span class="absolute -top-1 -right-1 w-2 h-2 bg-rose-500 rounded-full border border-white animate-pulse"></span>
+            <?php endif; ?>
+        </button>
+
+        <!-- Mini Ventana Desplegable -->
+        <div id="menuNotificaciones" class="hidden absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden z-50 transform origin-top-right transition-all">
+            <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Notificaciones</span>
+                <?php if (!empty($notificaciones)): ?>
+                    <span class="bg-rose-100 text-rose-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase"><?= count($notificaciones) ?> Nuevas</span>
+                <?php endif; ?>
+            </div>
+            
+            <div class="max-h-72 overflow-y-auto custom-scrollbar">
+                <?php if (empty($notificaciones)): ?>
+                    <div class="px-4 py-8 text-center text-sm text-slate-500 font-medium">No hay notificaciones recientes.</div>
+                <?php else: ?>
+                    <?php foreach($notificaciones as $notif): 
+                        // Verifica el rol en tiempo real para pintar el diseño
+                        $esCliente = (strtolower($_SESSION['usuario']['rol']) === 'cliente');
+                        $tituloNotif = $esCliente ? 'Ticket Resuelto' : 'Nuevo Ticket Registrado';
+                        $colorIcono = $esCliente ? 'text-emerald-500 bg-emerald-50' : 'text-indigo-500 bg-indigo-50';
+                        $fechaFormato = date('d M Y - h:i a', strtotime($notif['fecha_actualizacion'] ?? $notif['fecha_creacion']));
+                    ?>
+                        <a href="index.php?action=ver_ticket&id=<?= $notif['id_requerimiento'] ?>" class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 border-b border-slate-50 transition cursor-pointer group">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 <?= $colorIcono ?>">
+                                <?php if ($esCliente): ?>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <?php else: ?>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <?php endif; ?>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-slate-800 mb-0.5 group-hover:text-indigo-600 transition"><?= $tituloNotif ?></p>
+                                <p class="text-[11px] text-slate-500 truncate mb-1"><span class="font-semibold">TK-<?= $notif['id_requerimiento'] ?>:</span> <?= htmlspecialchars($notif['titulo']) ?></p>
+                                <p class="text-[9px] font-bold text-slate-400"><?= $fechaFormato ?></p>
+                            </div>
+                        </a>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botón Nuevo Ticket (El tuyo, intacto) -->
+    <a href="index.php?action=nuevo_ticket" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-2 whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Nuevo Ticket
+    </a>
+</div>
+        </div>
         </header>
 
         <!-- Area Scrollable -->
@@ -100,16 +166,6 @@ if (!isset($requerimientos)) $requerimientos = [];
                     </div>
                     <h1 class="text-2xl font-black text-slate-800">Gestión de Requerimientos y Tareas</h1>
                     <p class="text-sm text-slate-500 mt-1 max-w-2xl">Supervisa, asigna y da seguimiento a los tickets del equipo en tiempo real con trazabilidad integral y métricas de desempeño.</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button class="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg shadow-sm flex items-center gap-2 transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        Exportar
-                    </button>
-                    <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md flex items-center gap-2 transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        Nuevo Ticket
-                    </button>
                 </div>
             </div>
 
@@ -277,6 +333,27 @@ if (!isset($requerimientos)) $requerimientos = [];
             </div>
         </div>
     </main>
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+    const btnNotif = document.getElementById('btnNotificaciones');
+    const menuNotif = document.getElementById('menuNotificaciones');
+
+    if (btnNotif && menuNotif) {
+        // Abrir/Cerrar al dar clic en la campana
+        btnNotif.addEventListener('click', (e) => {
+            e.stopPropagation(); // Evita que el clic se propague al document
+            menuNotif.classList.toggle('hidden');
+        });
+
+        // Cerrar al hacer clic en cualquier parte fuera de la ventana de notificaciones
+        document.addEventListener('click', (e) => {
+            if (!menuNotif.contains(e.target) && !btnNotif.contains(e.target)) {
+                menuNotif.classList.add('hidden');
+            }
+        });
+    }
+});
+</script>
 
     <script src="view/javascript/developer.js"></script>
 </body>

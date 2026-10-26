@@ -10,25 +10,32 @@ class Requerimiento {
     }
 
     // Guardar un nuevo ticket según el nuevo esquema
-    public function registrar($id_solicitante, $titulo, $prioridad, $descripcion_tecnica) {
+    public function registrar($id_proyecto, $titulo, $descripcion_tecnica, $prioridad, $id_solicitante) {
         try {
-            $sql = "INSERT INTO requerimientos (titulo, descripcion_tecnica, prioridad, id_solicitante) 
-                    VALUES (:titulo, :descripcion_tecnica, :prioridad, :id_solicitante)";
+            // El secreto está en el RETURNING id_requerimiento al final
+            $sql = "INSERT INTO requerimientos (id_proyecto, titulo, descripcion_tecnica, prioridad, estado, id_solicitante, fecha_creacion) 
+                    VALUES (:id_proyecto, :titulo, :desc, :prioridad, 'pendiente', :id_solicitante, NOW()) 
+                    RETURNING id_requerimiento";
+                    
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
-                ':titulo'              => $titulo,
-                ':descripcion_tecnica' => $descripcion_tecnica,
-                ':prioridad'           => $prioridad,
-                ':id_solicitante'      => $id_solicitante
+                ':id_proyecto' => $id_proyecto, // PostgreSQL maneja automáticamente los nulos aquí
+                ':titulo' => trim($titulo),
+                ':desc' => trim($descripcion_tecnica),
+                ':prioridad' => strtolower(trim($prioridad)),
+                ':id_solicitante' => (int)$id_solicitante
             ]);
-
-            return ['success' => true, 'message' => 'Requerimiento registrado con éxito.'];
+            
+            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Si todo salió bien, devolvemos el número de ID directamente
+            return $resultado ? (int)$resultado['id_requerimiento'] : false; 
+            
         } catch (PDOException $e) {
             error_log("Error al registrar requerimiento: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Error interno al guardar el requerimiento.'];
+            return false;
         }
     }
-
     // Listar tickets del usuario actual
     public function listarPorUsuario($id_solicitante) {
         try {
@@ -72,22 +79,19 @@ class Requerimiento {
     }
 
 
+    // Listar TODOS los tickets del sistema (Explícito para evitar pérdida de columnas)
     public function listarTodos() {
         try {
-            $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado, 
-                           u1.nombre AS solicitante, u1.rol AS rol_solicitante,
+            $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado, r.fecha_creacion, 
+                           u1.nombre AS solicitante, u1.correo AS correo_solicitante, u1.rol AS rol_solicitante, 
                            u2.nombre AS responsable
                     FROM requerimientos r
                     INNER JOIN usuarios u1 ON r.id_solicitante = u1.id_usuario
                     LEFT JOIN requerimientos_responsables rr ON r.id_requerimiento = rr.id_requerimiento
                     LEFT JOIN usuarios u2 ON rr.id_usuario = u2.id_usuario
-                    ORDER BY r.id_requerimiento DESC";
-            $stmt = $this->pdo->query($sql);
-            return $stmt->fetchAll();
-        } catch (PDOException $e) {
-            error_log("Error al listar todos los requerimientos: " . $e->getMessage());
-            return [];
-        }
+                    ORDER BY r.fecha_creacion DESC";
+            return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { return []; }
     }
     public function obtenerDetalle($id_requerimiento) {
         try {
@@ -205,6 +209,29 @@ class Requerimiento {
             error_log("Error en listarParaKanban: " . $e->getMessage());
             return [];
         }
+    }
+    // Obtener notificaciones para Admin/Dev (Últimos tickets pendientes)
+    public function obtenerNotificacionesTecnicos() {
+        try {
+            $sql = "SELECT id_requerimiento, titulo, fecha_creacion 
+                    FROM requerimientos 
+                    WHERE estado = 'pendiente' 
+                    ORDER BY fecha_creacion DESC LIMIT 5";
+            return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { return []; }
+    }
+
+    // Obtener notificaciones para el Cliente (Últimos tickets terminados)
+    public function obtenerNotificacionesCliente($id_cliente) {
+        try {
+            $sql = "SELECT id_requerimiento, titulo, fecha_actualizacion 
+                    FROM requerimientos 
+                    WHERE estado = 'terminado' AND id_solicitante = ? 
+                    ORDER BY fecha_actualizacion DESC LIMIT 5";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$id_cliente]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { return []; }
     }
 }
 ?>
