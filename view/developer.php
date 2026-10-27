@@ -11,25 +11,33 @@ if (!isset($requerimientos)) $requerimientos = [];
     <title>Panel de Desarrollo | PosPerú</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="view/css/developer.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-800 antialiased">
 
     <!-- SIDEBAR -->
-    <aside class="sidebar-bg w-64 flex-shrink-0 flex flex-col h-full text-slate-300 transition-all duration-300">
-        <div class="h-16 flex items-center px-6 border-b border-slate-700/50">
+    <aside id="sidebar" class="sidebar-bg w-64 flex-shrink-0 flex flex-col h-full text-slate-300 transition-transform duration-300 fixed inset-y-0 left-0 z-50 transform -translate-x-full lg:static lg:translate-x-0"> 
+        <!-- Modificado: Se agregó justify-between para separar el logo del botón -->
+        <div class="h-16 flex items-center px-6 border-b border-slate-700/50 justify-between">
             <div class="flex items-center gap-3 w-full">
-                <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white">
+                <!-- Modificado: Se agregó shrink-0 -->
+                <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                 </div>
-                <span class="text-lg font-bold text-white tracking-wide">PosPerú <span class="text-indigo-400 font-black text-sm">PRO</span></span>
+                <span class="text-lg font-bold text-white tracking-wide truncate">PosPerú <span class="text-indigo-400 font-black text-sm">PRO</span></span>
             </div>
+            
+            <!-- NUEVO: Botón Cerrar (Solo visible en móviles) -->
+            <button id="btnCerrarMenu" class="lg:hidden text-slate-400 hover:text-white p-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
 
         <div class="flex-1 overflow-y-auto py-4 px-3 space-y-6">
             <div>
                 <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Operaciones</p>
                 <nav class="space-y-1">
-                    <a href="#" class="sidebar-item-active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
+                    <a href="index.php?action=dashboard" class="sidebar-item-active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                         Panel Principal
                     </a>
@@ -47,14 +55,16 @@ if (!isset($requerimientos)) $requerimientos = [];
 
         <div class="p-4 border-t border-slate-700/50">
             <div class="flex items-center gap-3 bg-slate-800/50 p-2.5 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-800 transition">
-                <div class="w-9 h-9 rounded bg-indigo-900/50 text-indigo-300 flex items-center justify-center font-bold text-sm border border-indigo-500/30 uppercase">
+                <!-- Modificado: Se agregó shrink-0 para evitar que el avatar se deforme -->
+                <div class="w-9 h-9 rounded bg-indigo-900/50 text-indigo-300 flex items-center justify-center font-bold text-sm border border-indigo-500/30 uppercase shrink-0">
                     <?= substr(htmlspecialchars($usuario['nombre']), 0, 2) ?>
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-white truncate"><?= htmlspecialchars(explode(' ', $usuario['nombre'])[0]) ?></p>
                     <p class="text-[10px] text-slate-400 truncate"><?= htmlspecialchars($usuario['correo']) ?></p>
                 </div>
-                <a href="index.php?action=logout" class="text-slate-400 hover:text-rose-400 transition" title="Cerrar sesión">
+                <!-- Modificado: Se agregó shrink-0 y un poco de padding (p-1) -->
+                <a href="index.php?action=logout" class="text-slate-400 hover:text-rose-400 transition shrink-0 p-1" title="Cerrar sesión">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 </a>
             </div>
@@ -62,10 +72,15 @@ if (!isset($requerimientos)) $requerimientos = [];
     </aside>
 
     <!-- CONTENIDO PRINCIPAL -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
+    <main class="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-slate-50 relative w-full">
         <!-- Top Navbar -->
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 shadow-sm z-10">
-            <div class="flex-1 max-w-2xl">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-sm z-10 gap-2 sm:gap-4">
+            
+            <!-- Botón Menú Hamburguesa (Solo Móvil) -->
+            <button id="btnAbrirMenu" class="lg:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 shrink-0 -ml-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>  
+             <div class="flex-1 max-w-2xl">
                 <div class="relative w-full">
                     <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     <input type="text" id="searchInput" placeholder="Buscar tickets, tareas o proyectos (Ctrl + K)..." class="w-full pl-10 pr-4 py-2 bg-slate-100 border-transparent focus:bg-white border focus:border-indigo-500 rounded-lg text-sm outline-none transition">
@@ -92,8 +107,7 @@ if (!isset($requerimientos)) $requerimientos = [];
             <div class="h-6 w-px bg-slate-200 mx-2"></div>
             
             <!-- Campana de Notificaciones -->
-            <!-- Campana de Notificaciones y Botón de Acción -->
-<div class="flex items-center gap-4">
+    <div class="flex items-center gap-4">
     
     <!-- Contenedor Relativo para la Campana y el Menú Desplegable -->
     <div class="relative">
@@ -319,9 +333,12 @@ if (!isset($requerimientos)) $requerimientos = [];
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                     </svg>
                                             </a>
-                                            <button class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition" title="Editar / Asignar">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                            </button>
+                                             <a href="index.php?action=eliminar_ticket&id=<?= $req['id_requerimiento'] ?>" 
+                                                onclick="confirmarEliminacion(event, this.href, '<?= $req['id_requerimiento'] ?>')"
+                                                class="text-slate-400 hover:text-rose-600 transition p-1 cursor-pointer" 
+                                                title="Eliminar definitivamente">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -333,28 +350,9 @@ if (!isset($requerimientos)) $requerimientos = [];
             </div>
         </div>
     </main>
-    <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const btnNotif = document.getElementById('btnNotificaciones');
-    const menuNotif = document.getElementById('menuNotificaciones');
-
-    if (btnNotif && menuNotif) {
-        // Abrir/Cerrar al dar clic en la campana
-        btnNotif.addEventListener('click', (e) => {
-            e.stopPropagation(); // Evita que el clic se propague al document
-            menuNotif.classList.toggle('hidden');
-        });
-
-        // Cerrar al hacer clic en cualquier parte fuera de la ventana de notificaciones
-        document.addEventListener('click', (e) => {
-            if (!menuNotif.contains(e.target) && !btnNotif.contains(e.target)) {
-                menuNotif.classList.add('hidden');
-            }
-        });
-    }
-});
-</script>
-
-    <script src="view/javascript/developer.js"></script>
+    <!-- SCRIPT -->
+    <script src="view/javascript/developer.js?v=<?= time() ?>"></script>
+</body>
+</html>
 </body>
 </html>

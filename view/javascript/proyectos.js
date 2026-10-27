@@ -1,4 +1,43 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const btnAbrir = document.getElementById('btnAbrirMenu');
+    const btnCerrar = document.getElementById('btnCerrarMenu');
+
+    function toggleMenu() {
+        if (!sidebar) return;
+        sidebar.classList.toggle('-translate-x-full');
+        if (overlay.classList.contains('hidden')) {
+            overlay.classList.remove('hidden', 'pointer-events-none');
+            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        } else {
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+    }
+
+    if (btnAbrir) btnAbrir.addEventListener('click', toggleMenu);
+    if (btnCerrar) btnCerrar.addEventListener('click', toggleMenu);
+    if (overlay) overlay.addEventListener('click', toggleMenu); // Corregido: se cambió } por );
+    
+    const btnNotif = document.getElementById('btnNotificaciones');
+    const menuNotif = document.getElementById('menuNotificaciones');
+
+    if (btnNotif && menuNotif) {
+        // Abrir/Cerrar al dar clic en la campana
+        btnNotif.addEventListener('click', (e) => {
+            e.stopPropagation(); // Evita que el clic se propague al document
+            menuNotif.classList.toggle('hidden');
+        });
+
+        // Cerrar al hacer clic en cualquier parte fuera de la ventana de notificaciones
+        document.addEventListener('click', (e) => {
+            if (!menuNotif.contains(e.target) && !btnNotif.contains(e.target)) {
+                menuNotif.classList.add('hidden');
+            }
+        });
+    }
+
     const inputBuscar = document.querySelector('input[placeholder="Buscar un proyecto"]');
     const filasProyectos = document.querySelectorAll('tbody tr');
 
@@ -22,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
 // Funciones del Modal de Proyectos
 function abrirModalProyecto() {
     const modal = document.getElementById('modalProyecto');

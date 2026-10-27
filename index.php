@@ -107,6 +107,11 @@ switch ($action) {
         $controller = new ProyectoController();
         $controller->eliminar();
         break;
+    case 'eliminar_ticket':
+        require_once 'controller/RequerimientoController.php';
+        $controller = new RequerimientoController();
+        $controller->eliminarTicket();
+        break;    
 
 
     // Cerrar sesión de forma segura

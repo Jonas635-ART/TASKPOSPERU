@@ -211,28 +211,8 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
             </div>
         </div>
     </main>
-        <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const btnNotif = document.getElementById('btnNotificaciones');
-    const menuNotif = document.getElementById('menuNotificaciones');
 
-    if (btnNotif && menuNotif) {
-        // Abrir/Cerrar al dar clic en la campana
-        btnNotif.addEventListener('click', (e) => {
-            e.stopPropagation(); // Evita que el clic se propague al document
-            menuNotif.classList.toggle('hidden');
-        });
 
-        // Cerrar al hacer clic en cualquier parte fuera de la ventana de notificaciones
-        document.addEventListener('click', (e) => {
-            if (!menuNotif.contains(e.target) && !btnNotif.contains(e.target)) {
-                menuNotif.classList.add('hidden');
-            }
-        });
-    }
-});
-</script>
-
-    <script src="view/javascript/kanban.js"></script>
+    <script src="view/javascript/kanban.js?v=<?= time() ?>"></script>
 </body>
 </html>

@@ -26,57 +26,69 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
 <body class="flex h-screen overflow-hidden text-slate-800 antialiased bg-slate-50">
 
     <!-- SIDEBAR UNIFICADO -->
-    <aside class="sidebar-bg bg-slate-900 w-64 flex-shrink-0 flex flex-col h-full text-slate-300 transition-all duration-300">
-        <div class="h-16 flex items-center px-6 border-b border-slate-700/50">
+    <aside id="sidebar" class="sidebar-bg w-64 flex-shrink-0 flex flex-col h-full text-slate-300 transition-transform duration-300 fixed inset-y-0 left-0 z-50 transform -translate-x-full lg:static lg:translate-x-0"> 
+        <!-- Modificado: Se agregó justify-between para separar el logo del botón -->
+        <div class="h-16 flex items-center px-6 border-b border-slate-700/50 justify-between">
             <div class="flex items-center gap-3 w-full">
-                <div class="w-8 h-8 <?= $bgLogo ?> rounded-lg flex items-center justify-center text-white">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <!-- Modificado: Se agregó shrink-0 -->
+                <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                 </div>
-                <span class="text-lg font-bold text-white tracking-wide">PosPerú <span class="<?= $textLogo ?> font-black text-sm"><?= $badgeTexto ?></span></span>
+                <span class="text-lg font-bold text-white tracking-wide truncate">PosPerú <span class="text-indigo-400 font-black text-sm">PRO</span></span>
             </div>
+            
+            <!-- NUEVO: Botón Cerrar (Solo visible en móviles) -->
+            <button id="btnCerrarMenu" class="lg:hidden text-slate-400 hover:text-white p-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
 
         <div class="flex-1 overflow-y-auto py-4 px-3 space-y-6">
             <div>
-                <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2"><?= $tituloMenu ?></p>
+                <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Operaciones</p>
                 <nav class="space-y-1">
-                    <a href="index.php?action=dashboard" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors">
+                    <a href="index.php?action=dashboard" class="sidebar-item-active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                         Panel Principal
                     </a>
-                    <a href="index.php?action=proyectos" class="sidebar-item-active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-slate-800 text-white transition-colors">
+                    <a href="index.php?action=proyectos" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
                         Proyectos
                     </a>
-                    <a href="index.php?action=kanban" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors">
+                    <a href="index.php?action=kanban" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                        Tablero Kanban
+                        Kanban
                     </a>
                 </nav>
             </div>
         </div>
 
         <div class="p-4 border-t border-slate-700/50">
-            <div class="flex items-center gap-3 bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
-                <div class="w-9 h-9 rounded <?= $bgAvatar ?> flex items-center justify-center font-bold text-sm border uppercase">
+            <div class="flex items-center gap-3 bg-slate-800/50 p-2.5 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-800 transition">
+                <!-- Modificado: Se agregó shrink-0 para evitar que el avatar se deforme -->
+                <div class="w-9 h-9 rounded bg-indigo-900/50 text-indigo-300 flex items-center justify-center font-bold text-sm border border-indigo-500/30 uppercase shrink-0">
                     <?= substr(htmlspecialchars($usuario['nombre']), 0, 2) ?>
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-white truncate"><?= htmlspecialchars(explode(' ', $usuario['nombre'])[0]) ?></p>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider truncate"><?= htmlspecialchars($labelRol) ?></p>
+                    <p class="text-[10px] text-slate-400 truncate"><?= htmlspecialchars($usuario['correo']) ?></p>
                 </div>
-                <a href="index.php?action=logout" class="text-slate-400 hover:text-rose-400 transition" title="Cerrar sesión">
+                <!-- Modificado: Se agregó shrink-0 y un poco de padding (p-1) -->
+                <a href="index.php?action=logout" class="text-slate-400 hover:text-rose-400 transition shrink-0 p-1" title="Cerrar sesión">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 </a>
             </div>
         </div>
     </aside>
-
     <!-- CONTENIDO PRINCIPAL -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative bg-white">
-        
-        <!-- Header Proyectos -->
-        <header class="pt-8 pb-4 px-8 shrink-0 flex items-center justify-between">
+    <main class="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-slate-50 relative w-full">
+        <!-- Top Navbar -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-sm z-10 gap-2 sm:gap-4">
+            
+            <!-- Botón Menú Hamburguesa (Solo Móvil) -->
+            <button id="btnAbrirMenu" class="lg:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 shrink-0 -ml-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button> 
             <h1 class="text-2xl font-black text-slate-800 tracking-tight">Buscar proyectos</h1>
 
                <!-- Campana de Notificaciones y Botón de Acción -->
@@ -276,29 +288,8 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
             </form>
         </div>
     </div>
-     <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const btnNotif = document.getElementById('btnNotificaciones');
-    const menuNotif = document.getElementById('menuNotificaciones');
 
-    if (btnNotif && menuNotif) {
-        // Abrir/Cerrar al dar clic en la campana
-        btnNotif.addEventListener('click', (e) => {
-            e.stopPropagation(); // Evita que el clic se propague al document
-            menuNotif.classList.toggle('hidden');
-        });
-
-        // Cerrar al hacer clic en cualquier parte fuera de la ventana de notificaciones
-        document.addEventListener('click', (e) => {
-            if (!menuNotif.contains(e.target) && !btnNotif.contains(e.target)) {
-                menuNotif.classList.add('hidden');
-            }
-        });
-    }
-});
-</script>
-
-    <!-- Enlace al JS para que funcione la barra de búsqueda -->
-    <script src="view/javascript/proyectos.js"></script>
+    <!-- Enlace al JS  -->
+    <script src="view/javascript/proyectos.js?v=<?= filemtime('view/javascript/proyectos.js') ?>"></script>
 </body>
 </html>

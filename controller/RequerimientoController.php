@@ -93,7 +93,6 @@ class RequerimientoController {
 
         $subtareas = $reqModel->listarSubtareas($id_requerimiento);
         $comentarios = $reqModel->listarComentarios($id_requerimiento);
-        $evidencias = $reqModel->listarEvidencias($id_requerimiento);
         $tecnicos = $reqModel->listarTecnicos();
         
         require_once __DIR__ . '/../view/ticket_detalle.php';
@@ -330,5 +329,39 @@ class RequerimientoController {
         $writer->save('php://output');
         exit;
     }
+    public function eliminarTicket() {
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+        // Validación: Permitir tanto a ADMIN como a DEVELOPER
+        $rol = strtolower($_SESSION['usuario']['rol'] ?? '');
+        if (!in_array($rol, ['admin', 'developer'])) {
+            header("Location: index.php?action=dashboard");
+            exit();
+        }
+
+        if (isset($_GET['id'])) {
+            $id_req = (int)$_GET['id'];
+            
+            require_once __DIR__ . '/../model/Requerimiento.php';
+            $reqModel = new Requerimiento();
+
+            if ($reqModel->eliminarDefinitivamente($id_req)) {
+                // Limpiar también las imágenes físicas en la carpeta uploads/
+                $patron = __DIR__ . "/../uploads/tk_" . $id_req . "_*.*";
+                $archivos = glob($patron);
+                if ($archivos) {
+                    foreach ($archivos as $archivo) {
+                        if (is_file($archivo)) {
+                            unlink($archivo);
+                        }
+                    }
+                }
+            }
+        }
+
+        header("Location: index.php?action=dashboard");
+        exit();
+    }
+
     }
 ?>

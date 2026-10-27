@@ -128,16 +128,6 @@ class Requerimiento {
         } catch (PDOException $e) { return []; }
     }
 
-    public function listarEvidencias($id_requerimiento) {
-        try {
-            $sql = "SELECT * FROM evidencias WHERE id_requerimiento = :id_requerimiento ORDER BY fecha_subida DESC";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([':id_requerimiento' => $id_requerimiento]);
-            return $stmt->fetchAll();
-        } catch (PDOException $e) { return []; }
-    }
-
-
     public function actualizarEstadoTicket($id_requerimiento, $nuevo_estado, $nueva_prioridad) {
         try {
             $sql = "UPDATE requerimientos SET estado = :estado, prioridad = :prioridad, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id_requerimiento = :id";
@@ -233,5 +223,40 @@ class Requerimiento {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) { return []; }
     }
+    
+    public function eliminarDefinitivamente($id_requerimiento) {
+        try {
+            $this->pdo->beginTransaction();
+
+            // 1. Eliminar responsables de subtareas asociadas al ticket
+            $sqlSubResp = "DELETE FROM subtareas_responsables 
+                           WHERE id_subtarea IN (SELECT id_subtarea FROM subtareas WHERE id_requerimiento = ?)";
+            $stmt = $this->pdo->prepare($sqlSubResp);
+            $stmt->execute([$id_requerimiento]);
+
+            // 2. Eliminar subtareas del ticket
+            $stmt = $this->pdo->prepare("DELETE FROM subtareas WHERE id_requerimiento = ?");
+            $stmt->execute([$id_requerimiento]);
+
+            // 3. Eliminar comentarios del ticket
+            $stmt = $this->pdo->prepare("DELETE FROM comentarios WHERE id_requerimiento = ?");
+            $stmt->execute([$id_requerimiento]);
+
+            // 4. Eliminar responsables asignados al ticket
+            $stmt = $this->pdo->prepare("DELETE FROM requerimientos_responsables WHERE id_requerimiento = ?");
+            $stmt->execute([$id_requerimiento]);
+
+            // 5. Eliminar el ticket principal
+            $stmt = $this->pdo->prepare("DELETE FROM requerimientos WHERE id_requerimiento = ?");
+            $stmt->execute([$id_requerimiento]);
+
+            $this->pdo->commit();
+            return true;
+        } catch (PDOException $e) {
+            $this->pdo->rollBack();
+            return false;
+        }
+    }
+
 }
 ?>
