@@ -20,13 +20,23 @@ class Proyecto {
                             FROM proyectos_miembros pm
                             INNER JOIN usuarios u ON pm.id_usuario = u.id_usuario
                             WHERE pm.id_proyecto = p.id_proyecto
-                        ) AS miembros_data
+                        ) AS miembros_data,
+                        (SELECT COUNT(*) FROM requerimientos r WHERE r.id_proyecto = p.id_proyecto) AS total_tickets
                     FROM proyectos p
                     ORDER BY p.fecha_actualizacion DESC";
             
             return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) { return []; }
     }
+    // Obtener un proyecto por ID (false si no existe)
+    public function obtener($id) {
+        try {
+            $stmt = $this->pdo->prepare("SELECT id_proyecto, nombre_proyecto, descripcion FROM proyectos WHERE id_proyecto = ?");
+            $stmt->execute([(int)$id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { return false; }
+    }
+
     // Listar posibles líderes (Admins y Developers)
     public function listarUsuariosTecnicos() {
         $sql = "SELECT id_usuario, nombre FROM usuarios WHERE rol IN ('admin', 'developer') ORDER BY nombre ASC";

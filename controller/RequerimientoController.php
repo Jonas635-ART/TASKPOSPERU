@@ -375,6 +375,23 @@ class RequerimientoController {
         require_once __DIR__ . '/../view/kanban.php';
     }
 
+    // Tickets donde el usuario logueado es el responsable
+    public function misAsignaciones() {
+        $usuario = $_SESSION['usuario'];
+        $reqModel = new Requerimiento();
+
+        $asignaciones = $reqModel->listarAsignadosA($usuario['id']);
+        $notificaciones = $reqModel->obtenerNotificacionesTecnicos();
+
+        $resumen = ['total' => count($asignaciones), 'pendiente' => 0, 'en proceso' => 0, 'terminado' => 0];
+        foreach ($asignaciones as $a) {
+            $est = strtolower($a['estado']);
+            if (isset($resumen[$est])) { $resumen[$est]++; }
+        }
+
+        require_once __DIR__ . '/../view/mis_asignaciones.php';
+    }
+
     public function exportarExcel() {
         if (session_status() === PHP_SESSION_NONE) { session_start(); }
         

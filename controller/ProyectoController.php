@@ -1,16 +1,24 @@
 <?php
 if (!defined('APP_INIT')) { http_response_code(403); exit(); }
 require_once __DIR__ . '/../model/Proyecto.php';
+require_once __DIR__ . '/../model/Requerimiento.php';
 
 class ProyectoController {
-   public function index() {
+
+    // Respuesta JSON de error con código HTTP
+    private function errorJson(int $codigo, string $mensaje): void {
+        http_response_code($codigo);
+        echo json_encode(['success' => false, 'message' => $mensaje]);
+        exit();
+    }
+
+    public function index() {
         if (session_status() === PHP_SESSION_NONE) { session_start(); }
         if (!isset($_SESSION['usuario'])) { header("Location: index.php?action=login"); exit(); }
 
         $usuario = $_SESSION['usuario'];
         $rol = strtolower($usuario['rol']);
 
-        require_once __DIR__ . '/../model/Requerimiento.php';
         $reqModel = new Requerimiento();
         $notificaciones = [];
         if ($rol === 'cliente') {
@@ -19,8 +27,6 @@ class ProyectoController {
             $notificaciones = $reqModel->obtenerNotificacionesTecnicos();
         }
 
-        if (!defined('APP_INIT')) { http_response_code(403); exit(); }
-require_once __DIR__ . '/../model/Proyecto.php';
         $proyectoModel = new Proyecto();
         $proyectos_db = $proyectoModel->listarProyectos();
         $usuarios_tecnicos = $proyectoModel->listarUsuariosTecnicos();
@@ -64,6 +70,7 @@ require_once __DIR__ . '/../model/Proyecto.php';
                 'icono' => $paletaIconos[$i % count($paletaIconos)],
                 'miembros' => $miembros_array,
                 'miembros_ids' => implode(',', $miembros_ids), // Para marcar los checkboxes al editar
+                'total_tickets' => (int)($p['total_tickets'] ?? 0),
                 'fecha' => $fecha_formato
             ];
             $i++;
@@ -74,29 +81,96 @@ require_once __DIR__ . '/../model/Proyecto.php';
 
     public function guardar() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!defined('APP_INIT')) { http_response_code(403); exit(); }
-require_once __DIR__ . '/../model/Proyecto.php';
             $model = new Proyecto();
             
             $id = !empty($_POST['id_proyecto']) ? (int)$_POST['id_proyecto'] : null;
-            $nombre = trim($_POST['nombre']);
-            $descripcion = trim($_POST['descripcion']);
-            $miembros = $_POST['miembros'] ?? []; // Array con los IDs de los usuarios seleccionados
+            $nombre = trim($_POST['nombre'] ?? '');
+            $descripcion = trim($_POST['descripcion'] ?? '');
+            $miembros = array_map('intval', (array)($_POST['miembros'] ?? [])); // IDs de los usuarios seleccionados
             
-            $model->guardar($id, $nombre, $descripcion, $miembros);
-            header("Location: index.php?action=proyectos");
-            exit();
+            if ($nombre !== '') {
+                $model->guardar($id, $nombre, $descripcion, $miembros);
+            }
         }
+        header("Location: index.php?action=proyectos");
+        exit();
     }
 
     public function eliminar() {
         if (isset($_GET['id'])) {
-            if (!defined('APP_INIT')) { http_response_code(403); exit(); }
-require_once __DIR__ . '/../model/Proyecto.php';
             $model = new Proyecto();
             $model->eliminar((int)$_GET['id']);
         }
         header("Location: index.php?action=proyectos");
+        exit();
+    }
+
+    // ==========================================================
+    // Gestión de tickets dentro de un proyecto (admin y developer)
+    // ==========================================================
+
+    // AJAX (GET): tickets del proyecto y tickets disponibles para agregar
+    public function ticketsProyecto() {
+        header('Content-Type: application/json');
+        $id_proyecto = (int)($_GET['id_proyecto'] ?? 0);
+
+        $proyecto = $id_proyecto ? (new Proyecto())->obtener($id_proyecto) : false;
+        if (!$proyecto) {
+            $this->errorJson(404, 'El proyecto no existe.');
+        }
+
+        $reqModel = new Requerimiento();
+        echo json_encode([
+            'success'     => true,
+            'proyecto'    => ['id' => (int)$proyecto['id_proyecto'], 'nombre' => $proyecto['nombre_proyecto']],
+            'asignados'   => $reqModel->listarPorProyecto($id_proyecto),
+            'disponibles' => $reqModel->listarDisponiblesParaProyecto($id_proyecto),
+        ]);
+        exit();
+    }
+
+    // AJAX (POST): agregar (o mover) un ticket al proyecto
+    public function agregarTicket() {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->errorJson(405, 'Método no permitido.');
+        }
+
+        $id_proyecto = (int)($_POST['id_proyecto'] ?? 0);
+        $id_req      = (int)($_POST['id_requerimiento'] ?? 0);
+
+        if (!$id_proyecto || !(new Proyecto())->obtener($id_proyecto)) {
+            $this->errorJson(404, 'El proyecto no existe.');
+        }
+
+        $reqModel = new Requerimiento();
+        if (!$id_req || !$reqModel->obtenerDetalle($id_req)) {
+            $this->errorJson(404, 'El ticket no existe.');
+        }
+
+        echo json_encode(['success' => $reqModel->asignarProyecto($id_req, $id_proyecto)]);
+        exit();
+    }
+
+    // AJAX (POST): quitar un ticket del proyecto (el ticket NO se borra, queda sin proyecto)
+    public function quitarTicket() {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->errorJson(405, 'Método no permitido.');
+        }
+
+        $id_proyecto = (int)($_POST['id_proyecto'] ?? 0);
+        $id_req      = (int)($_POST['id_requerimiento'] ?? 0);
+
+        $reqModel = new Requerimiento();
+        $ticket = $id_req ? $reqModel->obtenerDetalle($id_req) : false;
+
+        // Solo se puede quitar si el ticket realmente pertenece a ese proyecto
+        if (!$ticket || (int)($ticket['id_proyecto'] ?? 0) !== $id_proyecto) {
+            $this->errorJson(404, 'El ticket no pertenece a este proyecto.');
+        }
+
+        echo json_encode(['success' => $reqModel->asignarProyecto($id_req, null)]);
         exit();
     }
 }

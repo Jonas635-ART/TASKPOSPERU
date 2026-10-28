@@ -46,6 +46,7 @@ $rutas = [
     'api_actualizar_estado'   => ['RequerimientoController', 'actualizarEstado',   TECNICOS],
     'api_asignar_responsable' => ['RequerimientoController', 'asignarResponsable', TECNICOS],
     'kanban'                  => ['RequerimientoController', 'verKanban',          TECNICOS],
+    'mis_asignaciones'        => ['RequerimientoController', 'misAsignaciones',    TECNICOS],
     'eliminar_ticket'         => ['RequerimientoController', 'eliminarTicket',     TECNICOS],
     'exportar_excel'          => ['RequerimientoController', 'exportarExcel',      SOLO_ADMIN],
 
@@ -53,6 +54,11 @@ $rutas = [
     'proyectos'               => ['ProyectoController', 'index',    TECNICOS],
     'guardar_proyecto'        => ['ProyectoController', 'guardar',  SOLO_ADMIN],
     'eliminar_proyecto'       => ['ProyectoController', 'eliminar', SOLO_ADMIN],
+
+    // Tickets dentro de proyectos (agregar / quitar)
+    'api_proyecto_tickets'        => ['ProyectoController', 'ticketsProyecto', TECNICOS],
+    'api_proyecto_agregar_ticket' => ['ProyectoController', 'agregarTicket',   TECNICOS],
+    'api_proyecto_quitar_ticket'  => ['ProyectoController', 'quitarTicket',    TECNICOS],
 ];
 
 $action = $_GET['action'] ?? 'login';

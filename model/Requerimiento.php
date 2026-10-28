@@ -232,6 +232,90 @@ class Requerimiento {
         } catch (PDOException $e) { return []; }
     }
     
+    // ==========================================================
+    // Tickets <-> Proyectos
+    // ==========================================================
+
+    // Tickets que pertenecen a un proyecto
+    public function listarPorProyecto($id_proyecto) {
+        try {
+            $sql = "SELECT r.id_requerimiento, r.titulo, r.prioridad, r.estado, r.fecha_creacion,
+                           u2.nombre AS responsable
+                    FROM requerimientos r
+                    LEFT JOIN requerimientos_responsables rr ON r.id_requerimiento = rr.id_requerimiento
+                    LEFT JOIN usuarios u2 ON rr.id_usuario = u2.id_usuario
+                    WHERE r.id_proyecto = :id_proyecto
+                    ORDER BY r.fecha_creacion DESC";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':id_proyecto' => (int)$id_proyecto]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error en listarPorProyecto: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    // Tickets que se pueden agregar a un proyecto: los que no tienen proyecto
+    // y los que están en otro proyecto (se indica cuál para que el usuario sepa que se moverá)
+    public function listarDisponiblesParaProyecto($id_proyecto) {
+        try {
+            $sql = "SELECT r.id_requerimiento, r.titulo, r.prioridad, r.estado,
+                           p.nombre_proyecto AS proyecto_actual
+                    FROM requerimientos r
+                    LEFT JOIN proyectos p ON r.id_proyecto = p.id_proyecto
+                    WHERE r.id_proyecto IS NULL OR r.id_proyecto <> :id_proyecto
+                    ORDER BY (r.id_proyecto IS NULL) DESC, r.fecha_creacion DESC";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':id_proyecto' => (int)$id_proyecto]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error en listarDisponiblesParaProyecto: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    // Asigna un ticket a un proyecto, o lo deja sin proyecto si $id_proyecto es null
+    public function asignarProyecto($id_requerimiento, $id_proyecto) {
+        try {
+            $sql = "UPDATE requerimientos SET id_proyecto = :id_proyecto, fecha_actualizacion = CURRENT_TIMESTAMP
+                    WHERE id_requerimiento = :id";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->bindValue(':id_proyecto', $id_proyecto, $id_proyecto === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindValue(':id', (int)$id_requerimiento, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Error en asignarProyecto: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Tickets donde el usuario es el responsable asignado
+    public function listarAsignadosA($id_usuario) {
+        try {
+            $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado,
+                           r.fecha_creacion, r.fecha_actualizacion,
+                           u1.nombre AS solicitante,
+                           p.nombre_proyecto AS proyecto,
+                           (SELECT COUNT(*) FROM subtareas s WHERE s.id_requerimiento = r.id_requerimiento) AS total_subtareas,
+                           (SELECT COUNT(*) FROM subtareas s WHERE s.id_requerimiento = r.id_requerimiento AND s.estado = 'terminado') AS subtareas_completadas
+                    FROM requerimientos_responsables rr
+                    INNER JOIN requerimientos r ON rr.id_requerimiento = r.id_requerimiento
+                    INNER JOIN usuarios u1 ON r.id_solicitante = u1.id_usuario
+                    LEFT JOIN proyectos p ON r.id_proyecto = p.id_proyecto
+                    WHERE rr.id_usuario = :id_usuario
+                    ORDER BY CASE r.estado WHEN 'en proceso' THEN 0 WHEN 'pendiente' THEN 1 ELSE 2 END,
+                             CASE r.prioridad WHEN 'critica' THEN 0 WHEN 'alta' THEN 1 WHEN 'media' THEN 2 ELSE 3 END,
+                             r.fecha_creacion DESC";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([':id_usuario' => (int)$id_usuario]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error en listarAsignadosA: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function eliminarDefinitivamente($id_requerimiento) {
         try {
             $this->pdo->beginTransaction();
