@@ -1,5 +1,6 @@
 <?php 
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
+if (!defined('APP_INIT')) { http_response_code(403); exit(); }
 $usuario = $_SESSION['usuario'];
 $rol = strtolower($usuario['rol']);
 $esAdmin = ($rol === 'admin');

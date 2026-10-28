@@ -1,4 +1,5 @@
 <?php 
+if (!defined('APP_INIT')) { http_response_code(403); exit(); }
 $usuario = $_SESSION['usuario']; 
 if (!isset($estadisticas)) $estadisticas = ['total' => 0, 'pendientes' => 0, 'en_proceso' => 0, 'terminados' => 0];
 if (!isset($requerimientos)) $requerimientos = [];

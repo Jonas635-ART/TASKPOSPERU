@@ -1,5 +1,6 @@
 <?php 
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
+if (!defined('APP_INIT')) { http_response_code(403); exit(); }
 $usuario = $_SESSION['usuario'] ?? null;
 
 if (!isset($ticket) || empty($ticket)) {
@@ -21,7 +22,8 @@ $archivos_encontrados = glob($patron_busqueda);
 if ($archivos_encontrados) {
     foreach ($archivos_encontrados as $ruta_absoluta) {
         $nombre_archivo = basename($ruta_absoluta);
-        $evidencias[] = ['ruta_archivo' => 'uploads/' . $nombre_archivo];
+        // Se sirve vía PHP (con verificación de acceso); uploads/ está bloqueada para acceso directo
+        $evidencias[] = ['ruta_archivo' => 'index.php?action=ver_evidencia&archivo=' . rawurlencode($nombre_archivo)];
     }
 }
 

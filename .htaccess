@@ -1,0 +1,29 @@
+# ==========================================================
+# Seguridad del proyecto PosPerú
+# ==========================================================
+
+# 1. Desactivar el listado de directorios
+Options -Indexes
+
+# 2. Bloquear acceso a archivos ocultos (.env, .git, .gitignore, etc.)
+#    y a archivos de configuración/documentación interna
+<FilesMatch "(^\.|\.(env|ini|log|sql|md|lock)$|^composer\.(json|lock)$)">
+    Require all denied
+</FilesMatch>
+
+# 3. Permitir que solo index.php sea ejecutado directamente por URL;
+#    cualquier otro archivo .php (vistas, controladores, modelos, etc.) queda bloqueado.
+<FilesMatch "\.php$">
+    Require all denied
+</FilesMatch>
+<Files "index.php">
+    Require all granted
+</Files>
+
+# 4. Cabeceras básicas de seguridad HTTP
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+

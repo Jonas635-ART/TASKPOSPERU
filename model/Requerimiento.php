@@ -1,7 +1,14 @@
 <?php
 require_once __DIR__ . '/../config/conexion.php';
 
+if (!defined('APP_INIT')) { http_response_code(403); exit(); }
+
 class Requerimiento {
+    // Valores permitidos (deben coincidir con los CHECK de la base de datos)
+    public const ESTADOS           = ['pendiente', 'en proceso', 'terminado'];
+    public const PRIORIDADES       = ['baja', 'media', 'alta', 'critica'];
+    public const ESTADOS_SUBTAREA  = ['pendiente', 'terminado'];
+
     private $pdo;
 
     public function __construct() {
@@ -128,9 +135,10 @@ class Requerimiento {
         } catch (PDOException $e) { return []; }
     }
 
-    public function actualizarEstadoTicket($id_requerimiento, $nuevo_estado, $nueva_prioridad) {
+    // Si $nueva_prioridad es null se conserva la prioridad actual (p. ej. al mover en el Kanban)
+    public function actualizarEstadoTicket($id_requerimiento, $nuevo_estado, $nueva_prioridad = null) {
         try {
-            $sql = "UPDATE requerimientos SET estado = :estado, prioridad = :prioridad, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id_requerimiento = :id";
+            $sql = "UPDATE requerimientos SET estado = :estado, prioridad = COALESCE(:prioridad, prioridad), fecha_actualizacion = CURRENT_TIMESTAMP WHERE id_requerimiento = :id";
             $stmt = $this->pdo->prepare($sql);
             return $stmt->execute([':estado' => $nuevo_estado, ':prioridad' => $nueva_prioridad, ':id' => $id_requerimiento]);
         } catch (PDOException $e) { return false; }

@@ -1,0 +1,3 @@
+# Carpeta interna de backend: ningún archivo de aquí debe servirse por HTTP
+Require all denied
+

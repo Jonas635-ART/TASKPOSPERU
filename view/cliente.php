@@ -1,4 +1,5 @@
 <?php
+if (!defined('APP_INIT')) { http_response_code(403); exit(); }
 $usuario = $_SESSION['usuario'] ?? ['nombre' => 'Usuario', 'rol' => 'cliente'];
 // $requerimientos viene del DashboardController
 if (!isset($requerimientos)) $requerimientos = [];

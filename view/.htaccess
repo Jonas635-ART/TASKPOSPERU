@@ -1,0 +1,7 @@
+# En /view solo se permiten recursos estáticos (CSS, JS, imágenes, fuentes).
+# Las plantillas .php solo pueden cargarse desde index.php en el servidor.
+<FilesMatch "\.(php|phtml|inc)$">
+    Require all denied
+</FilesMatch>
+Options -Indexes
+

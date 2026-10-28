@@ -1,7 +1,76 @@
 <?php
+if (!defined('APP_INIT')) { http_response_code(403); exit(); }
 require_once __DIR__ . '/../model/Requerimiento.php';
 
 class RequerimientoController {
+
+    // ==========================================================
+    // Configuración de evidencias (imágenes adjuntas)
+    // ==========================================================
+    // Tipo MIME real (detectado por contenido) => extensión con la que se guarda
+    private const EVIDENCIA_MIMES = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+    ];
+    private const EVIDENCIA_MAX_ARCHIVOS = 3;
+    private const EVIDENCIA_MAX_BYTES    = 5 * 1024 * 1024; // 5 MB por imagen
+    // Formato de nombre: tk_{id_ticket}_{timestamp}_{n}.{ext}
+    private const EVIDENCIA_PATRON       = '/^tk_(\d+)_\d+_\d+\.(jpe?g|png|webp)$/i';
+
+    private static function dirUploads(): string {
+        return __DIR__ . '/../uploads/';
+    }
+
+    // Admin y developer ven todos los tickets; el cliente solo los que él solicitó.
+    private function puedeVerTicket(array $ticket): bool {
+        $usuario = $_SESSION['usuario'] ?? null;
+        if (!$usuario) {
+            return false;
+        }
+        if (in_array(strtolower($usuario['rol']), ['admin', 'developer'], true)) {
+            return true;
+        }
+        return (int)$ticket['id_solicitante'] === (int)$usuario['id'];
+    }
+
+    // Normaliza la prioridad recibida; si no es válida devuelve $porDefecto.
+    private function normalizarPrioridad($valor, ?string $porDefecto = 'media'): ?string {
+        $valor = strtolower(trim((string)$valor));
+        return in_array($valor, Requerimiento::PRIORIDADES, true) ? $valor : $porDefecto;
+    }
+
+    // Respuesta JSON de error con código HTTP
+    private function errorJson(int $codigo, string $mensaje): void {
+        http_response_code($codigo);
+        echo json_encode(['success' => false, 'message' => $mensaje]);
+        exit();
+    }
+
+    // Guarda hasta 3 imágenes validando tamaño y tipo real del archivo (no solo la extensión).
+    private function guardarEvidencias(int $id_req): void {
+        if (empty($_FILES['evidencias']['name'][0])) {
+            return;
+        }
+
+        $upload_dir = self::dirUploads();
+        if (!is_dir($upload_dir)) { mkdir($upload_dir, 0755, true); }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $total_archivos = min(count($_FILES['evidencias']['name']), self::EVIDENCIA_MAX_ARCHIVOS);
+
+        for ($i = 0; $i < $total_archivos; $i++) {
+            if ($_FILES['evidencias']['error'][$i] !== UPLOAD_ERR_OK) { continue; }
+            if ($_FILES['evidencias']['size'][$i] > self::EVIDENCIA_MAX_BYTES) { continue; }
+
+            $tmp  = $_FILES['evidencias']['tmp_name'][$i];
+            $mime = $finfo->file($tmp);
+            if (!isset(self::EVIDENCIA_MIMES[$mime])) { continue; }
+
+            $nombre_archivo = "tk_{$id_req}_" . time() . "_{$i}." . self::EVIDENCIA_MIMES[$mime];
+            move_uploaded_file($tmp, $upload_dir . $nombre_archivo);
+        }
+    }
     
     public function procesarNuevo() {
         header('Content-Type: application/json');
@@ -27,10 +96,7 @@ class RequerimientoController {
             }
 
             // Validar que la prioridad coincida con el CHECK constraint de la BD
-            $prioridades_validas = ['baja', 'media', 'alta', 'critica'];
-            if (!in_array($prioridad, $prioridades_validas)) {
-                $prioridad = 'media';
-            }
+            $prioridad = $this->normalizarPrioridad($prioridad);
 
             $reqModel = new Requerimiento();
             
@@ -39,26 +105,8 @@ class RequerimientoController {
 
             // 3. Formatear la respuesta JSON según el resultado
             if ($id_req) {
-                // ==========================================
-                // NUEVO: Procesar Evidencias Físicas
-                // ==========================================
-                if (!empty($_FILES['evidencias']['name'][0])) {
-                    $upload_dir = __DIR__ . '/../uploads/';
-                    if (!is_dir($upload_dir)) { mkdir($upload_dir, 0777, true); }
-                    
-                    $total_archivos = min(count($_FILES['evidencias']['name']), 3); 
-                    
-                    for ($i = 0; $i < $total_archivos; $i++) {
-                        if ($_FILES['evidencias']['error'][$i] === 0) {
-                            $ext = strtolower(pathinfo($_FILES['evidencias']['name'][$i], PATHINFO_EXTENSION));
-                            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-                                $nombre_archivo = "tk_{$id_req}_" . time() . "_{$i}.{$ext}";
-                                move_uploaded_file($_FILES['evidencias']['tmp_name'][$i], $upload_dir . $nombre_archivo);
-                            }
-                        }
-                    }
-                }
-                // ==========================================
+                // Procesar Evidencias Físicas
+                $this->guardarEvidencias($id_req);
 
                 echo json_encode([
                     'success' => true, 
@@ -74,12 +122,13 @@ class RequerimientoController {
             exit();
         }
     }
+
     public function verDetalle() {
         if (!isset($_SESSION['usuario'])) {
             header("Location: index.php?action=login"); exit();
         }
 
-        $id_requerimiento = $_GET['id'] ?? null;
+        $id_requerimiento = (int)($_GET['id'] ?? 0);
         if (!$id_requerimiento) {
             header("Location: index.php?action=dashboard"); exit();
         }
@@ -87,7 +136,10 @@ class RequerimientoController {
         $reqModel = new Requerimiento();
         $ticket = $reqModel->obtenerDetalle($id_requerimiento);
 
-        if (!$ticket) {
+        // Un cliente solo puede ver sus propios tickets. Se responde igual que
+        // si no existiera para no revelar qué IDs son válidos.
+        if (!$ticket || !$this->puedeVerTicket($ticket)) {
+            http_response_code(404);
             echo "El ticket no existe."; exit();
         }
 
@@ -97,12 +149,47 @@ class RequerimientoController {
         
         require_once __DIR__ . '/../view/ticket_detalle.php';
     }
+
+    // Sirve una imagen de evidencia solo si el usuario puede ver el ticket al que pertenece.
+    // La carpeta uploads/ está bloqueada para acceso directo (uploads/.htaccess).
+    public function verEvidencia() {
+        $archivo = basename((string)($_GET['archivo'] ?? ''));
+
+        if (!preg_match(self::EVIDENCIA_PATRON, $archivo, $coincidencias)) {
+            http_response_code(404); exit();
+        }
+
+        $ruta = self::dirUploads() . $archivo;
+        if (!is_file($ruta)) {
+            http_response_code(404); exit();
+        }
+
+        $reqModel = new Requerimiento();
+        $ticket = $reqModel->obtenerDetalle((int)$coincidencias[1]);
+        if (!$ticket || !$this->puedeVerTicket($ticket)) {
+            http_response_code(404); exit();
+        }
+
+        // Enviar el tipo real del archivo; si no es una imagen permitida, no se sirve
+        $mime = (new finfo(FILEINFO_MIME_TYPE))->file($ruta);
+        if (!isset(self::EVIDENCIA_MIMES[$mime])) {
+            http_response_code(404); exit();
+        }
+
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($ruta));
+        header('Content-Disposition: inline; filename="' . $archivo . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: private, max-age=3600');
+        readfile($ruta);
+        exit();
+    }
+
     // Procesar el formulario de nuevo ticket
     public function guardarTicket() {
         if (session_status() === PHP_SESSION_NONE) { session_start(); }
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            require_once __DIR__ . '/../model/Requerimiento.php';
             $reqModel = new Requerimiento();
             
             // Capturar el proyecto de forma opcional
@@ -110,7 +197,7 @@ class RequerimientoController {
             
             $titulo = $_POST['titulo'] ?? '';
             $descripcion = $_POST['descripcion_tecnica'] ?? '';
-            $prioridad = $_POST['prioridad'] ?? 'media';
+            $prioridad = $this->normalizarPrioridad($_POST['prioridad'] ?? 'media');
             $id_responsable = !empty($_POST['id_responsable']) ? (int)$_POST['id_responsable'] : null;
             $subtareas = $_POST['subtareas'] ?? []; 
             $id_solicitante = $_SESSION['usuario']['id'];
@@ -128,44 +215,30 @@ class RequerimientoController {
                     }
 
                     // 3. Usar tu función 'insertarSubtarea'
-                    foreach ($subtareas as $subtarea) {
+                    foreach ((array)$subtareas as $subtarea) {
                         if (!empty(trim($subtarea))) {
                             $reqModel->insertarSubtarea($id_req, $subtarea);
                         }
                     }
 
                     // 4. Procesar Evidencias (Límite 3 imágenes)
-                    if (!empty($_FILES['evidencias']['name'][0])) {
-                        $upload_dir = __DIR__ . '/../uploads/';
-                        if (!is_dir($upload_dir)) { mkdir($upload_dir, 0777, true); }
-                        
-                        $total_archivos = min(count($_FILES['evidencias']['name']), 3); 
-                        
-                        for ($i = 0; $i < $total_archivos; $i++) {
-                            if ($_FILES['evidencias']['error'][$i] === 0) {
-                                $ext = strtolower(pathinfo($_FILES['evidencias']['name'][$i], PATHINFO_EXTENSION));
-                                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-                                    $nombre_archivo = "tk_{$id_req}_" . time() . "_{$i}.{$ext}";
-                                    
-                                    // Solo movemos el archivo a la carpeta uploads. Ya no guardamos en BD.
-                                    move_uploaded_file($_FILES['evidencias']['tmp_name'][$i], $upload_dir . $nombre_archivo);
-                                }
-                            }
-                        }
-                    }
+                    $this->guardarEvidencias($id_req);
 
                     header("Location: index.php?action=dashboard");
                     exit();
                 }
             }
         }
+
+        // Datos incompletos o error al guardar: volver al formulario en vez de mostrar una página en blanco
+        header("Location: index.php?action=nuevo_ticket&error=1");
+        exit();
     }
 
     // Mostrar el formulario para crear un nuevo ticket
     public function nuevoTicket() {
         if (session_status() === PHP_SESSION_NONE) { session_start(); }
         
-        require_once __DIR__ . '/../model/Requerimiento.php';
         $reqModel = new Requerimiento();
         
         // Usamos tu función original para obtener admins y developers
@@ -177,7 +250,7 @@ class RequerimientoController {
     // Funciones AJAX para interactuar con la vista de detalle
     public function agregarSubtarea() {
         header('Content-Type: application/json');
-        $id_req = $_POST['id_requerimiento'] ?? '';
+        $id_req = (int)($_POST['id_requerimiento'] ?? 0);
         $desc = trim($_POST['descripcion'] ?? '');
         
         if($id_req && $desc) {
@@ -190,36 +263,58 @@ class RequerimientoController {
 
     public function agregarComentario() {
         header('Content-Type: application/json');
-        $id_req = $_POST['id_requerimiento'] ?? '';
+        $id_req = (int)($_POST['id_requerimiento'] ?? 0);
         $msg = trim($_POST['mensaje'] ?? '');
         $id_usr = $_SESSION['usuario']['id'] ?? '';
         
         if($id_req && $msg && $id_usr) {
             $reqModel = new Requerimiento();
+            // Un cliente solo puede comentar en sus propios tickets
+            $ticket = $reqModel->obtenerDetalle($id_req);
+            if (!$ticket || !$this->puedeVerTicket($ticket)) {
+                $this->errorJson(403, 'No tienes acceso a este ticket.');
+            }
+
             $res = $reqModel->insertarComentario($id_req, $id_usr, $msg);
             echo json_encode(['success' => $res]);
         } else { echo json_encode(['success' => false]); }
         exit();
     }
 
+    // AJAX: Cambiar estado (y opcionalmente prioridad) de un ticket.
+    // Si no se envía prioridad, se conserva la actual (lo usa el Kanban).
     public function actualizarEstado() {
         header('Content-Type: application/json');
-        $id_req = $_POST['id_requerimiento'] ?? '';
-        $estado = $_POST['estado'] ?? '';
-        $prioridad = $_POST['prioridad'] ?? '';
-        
-        if($id_req && $estado && $prioridad) {
-            $reqModel = new Requerimiento();
-            $res = $reqModel->actualizarEstadoTicket($id_req, $estado, $prioridad);
-            echo json_encode(['success' => $res]);
-        } else { echo json_encode(['success' => false]); }
+        $id_req    = (int)($_POST['id_requerimiento'] ?? 0);
+        $estado    = strtolower(trim($_POST['estado'] ?? ''));
+        $prioridad = trim($_POST['prioridad'] ?? '');
+
+        if (!$id_req) {
+            $this->errorJson(400, 'Falta el ID del ticket.');
+        }
+        if (!in_array($estado, Requerimiento::ESTADOS, true)) {
+            $this->errorJson(422, 'Estado no válido.');
+        }
+
+        $prioridadFinal = null;
+        if ($prioridad !== '') {
+            $prioridadFinal = $this->normalizarPrioridad($prioridad, null);
+            if ($prioridadFinal === null) {
+                $this->errorJson(422, 'Prioridad no válida.');
+            }
+        }
+
+        $reqModel = new Requerimiento();
+        $res = $reqModel->actualizarEstadoTicket($id_req, $estado, $prioridadFinal);
+        echo json_encode(['success' => $res]);
         exit();
     }
+
     // AJAX: Asignar Responsable
     public function asignarResponsable() {
         header('Content-Type: application/json');
-        $id_req = $_POST['id_requerimiento'] ?? '';
-        $id_usr = $_POST['id_usuario'] ?? '';
+        $id_req = (int)($_POST['id_requerimiento'] ?? 0);
+        $id_usr = (int)($_POST['id_usuario'] ?? 0);
         
         if($id_req && $id_usr) {
             $reqModel = new Requerimiento();
@@ -232,18 +327,22 @@ class RequerimientoController {
     // AJAX: Marcar Subtarea
     public function marcarSubtarea() {
         header('Content-Type: application/json');
-        $id_sub = $_POST['id_subtarea'] ?? '';
-        $estado = $_POST['estado'] ?? 'pendiente'; 
+        $id_sub = (int)($_POST['id_subtarea'] ?? 0);
+        $estado = strtolower(trim($_POST['estado'] ?? 'pendiente'));
         
-        if($id_sub) {
-            $reqModel = new Requerimiento();
-            $res = $reqModel->actualizarEstadoSubtarea($id_sub, $estado);
-            echo json_encode(['success' => $res]);
-        } else { 
-            echo json_encode(['success' => false, 'message' => 'Falta el ID de la subtarea']); 
+        if (!$id_sub) {
+            $this->errorJson(400, 'Falta el ID de la subtarea');
         }
+        if (!in_array($estado, Requerimiento::ESTADOS_SUBTAREA, true)) {
+            $this->errorJson(422, 'Estado de subtarea no válido.');
+        }
+
+        $reqModel = new Requerimiento();
+        $res = $reqModel->actualizarEstadoSubtarea($id_sub, $estado);
+        echo json_encode(['success' => $res]);
         exit();
     }
+
     public function verKanban() {
         if (session_status() === PHP_SESSION_NONE) { session_start(); }
         if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] === 'cliente') {
@@ -253,6 +352,9 @@ class RequerimientoController {
 
         $reqModel = new Requerimiento();
         $todosTickets = $reqModel->listarParaKanban();
+
+        // Notificaciones para la campana del encabezado
+        $notificaciones = $reqModel->obtenerNotificacionesTecnicos();
 
         // Agrupar requerimientos en los tres contenedores Kanban
         $kanban = [
@@ -272,6 +374,7 @@ class RequerimientoController {
 
         require_once __DIR__ . '/../view/kanban.php';
     }
+
     public function exportarExcel() {
         if (session_status() === PHP_SESSION_NONE) { session_start(); }
         
@@ -282,7 +385,6 @@ class RequerimientoController {
         }
 
         // Cargar los datos desde el modelo
-        require_once __DIR__ . '/../model/Requerimiento.php';
         $reqModel = new Requerimiento();
         $requerimientos = $reqModel->listarTodos();
 
@@ -329,6 +431,7 @@ class RequerimientoController {
         $writer->save('php://output');
         exit;
     }
+
     public function eliminarTicket() {
         if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
@@ -342,12 +445,11 @@ class RequerimientoController {
         if (isset($_GET['id'])) {
             $id_req = (int)$_GET['id'];
             
-            require_once __DIR__ . '/../model/Requerimiento.php';
             $reqModel = new Requerimiento();
 
             if ($reqModel->eliminarDefinitivamente($id_req)) {
                 // Limpiar también las imágenes físicas en la carpeta uploads/
-                $patron = __DIR__ . "/../uploads/tk_" . $id_req . "_*.*";
+                $patron = self::dirUploads() . "tk_" . $id_req . "_*.*";
                 $archivos = glob($patron);
                 if ($archivos) {
                     foreach ($archivos as $archivo) {
@@ -363,5 +465,5 @@ class RequerimientoController {
         exit();
     }
 
-    }
+}
 ?>

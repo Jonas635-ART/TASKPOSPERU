@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../config/conexion.php';
 
+if (!defined('APP_INIT')) { http_response_code(403); exit(); }
+
 class Usuario {
     private $pdo;
 

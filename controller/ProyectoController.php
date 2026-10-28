@@ -1,4 +1,5 @@
 <?php
+if (!defined('APP_INIT')) { http_response_code(403); exit(); }
 require_once __DIR__ . '/../model/Proyecto.php';
 
 class ProyectoController {
@@ -18,7 +19,8 @@ class ProyectoController {
             $notificaciones = $reqModel->obtenerNotificacionesTecnicos();
         }
 
-        require_once __DIR__ . '/../model/Proyecto.php';
+        if (!defined('APP_INIT')) { http_response_code(403); exit(); }
+require_once __DIR__ . '/../model/Proyecto.php';
         $proyectoModel = new Proyecto();
         $proyectos_db = $proyectoModel->listarProyectos();
         $usuarios_tecnicos = $proyectoModel->listarUsuariosTecnicos();
@@ -72,7 +74,8 @@ class ProyectoController {
 
     public function guardar() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            require_once __DIR__ . '/../model/Proyecto.php';
+            if (!defined('APP_INIT')) { http_response_code(403); exit(); }
+require_once __DIR__ . '/../model/Proyecto.php';
             $model = new Proyecto();
             
             $id = !empty($_POST['id_proyecto']) ? (int)$_POST['id_proyecto'] : null;
@@ -88,7 +91,8 @@ class ProyectoController {
 
     public function eliminar() {
         if (isset($_GET['id'])) {
-            require_once __DIR__ . '/../model/Proyecto.php';
+            if (!defined('APP_INIT')) { http_response_code(403); exit(); }
+require_once __DIR__ . '/../model/Proyecto.php';
             $model = new Proyecto();
             $model->eliminar((int)$_GET['id']);
         }

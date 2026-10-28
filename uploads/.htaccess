@@ -1,0 +1,11 @@
+# Bloquea el acceso directo por URL a las evidencias.
+# Las imágenes se sirven a través de index.php?action=ver_evidencia,
+# que verifica la sesión y que el usuario pueda ver el ticket.
+Require all denied
+
+# Defensa adicional: nunca ejecutar scripts dentro de esta carpeta
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+Options -ExecCGI -Indexes
+

@@ -11,13 +11,62 @@
     border-radius: 4px;
 }
 
-/* Efectos Drag and Drop */
+/* Efectos Drag and Drop (escritorio y táctil) */
+.kanban-card {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
 .kanban-card.dragging {
     opacity: 0.4;
     transform: scale(0.98);
 }
 
-.kanban-column.drag-over {
+.kanban-drag-ghost {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.92;
+    box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.25), 0 8px 10px -6px rgba(15, 23, 42, 0.15);
+    border-color: #6366f1 !important;
+    transition: none !important;
+}
+
+.kanban-column.drag-over,
+.kanban-tab.drag-over {
     background-color: #e0e7ff !important; /* indigo-100 */
     border-style: dashed !important;
+}
+
+/* Pestaña de columna activa en móvil/tablet */
+.kanban-tab[aria-current="true"] {
+    background-color: #ffffff;
+    color: #1e293b;
+    box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.08);
+}
+
+/* Selector "Mover a" y aviso según tipo de pantalla */
+.kanban-move {
+    display: flex;
+}
+.hint-touch {
+    display: inline;
+}
+.hint-drag {
+    display: none;
+}
+
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+    .kanban-move {
+        display: none;
+    }
+    .hint-touch {
+        display: none;
+    }
+    .hint-drag {
+        display: inline;
+    }
 }

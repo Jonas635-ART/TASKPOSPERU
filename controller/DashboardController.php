@@ -1,5 +1,7 @@
 <?php
 
+if (!defined('APP_INIT')) { http_response_code(403); exit(); }
+
 class DashboardController {
     public function index() {
         if (session_status() === PHP_SESSION_NONE) { session_start(); }

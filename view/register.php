@@ -1,4 +1,5 @@
 <!-- view/register.php -->
+<?php if (!defined('APP_INIT')) { http_response_code(403); exit(); } ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
