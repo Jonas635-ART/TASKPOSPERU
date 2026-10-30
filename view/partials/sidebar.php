@@ -12,6 +12,9 @@ $itemsSidebar = [
     'kanban' => ['Tablero Kanban', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'],
     'mis_asignaciones' => ['Mis asignaciones', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
 ];
+if ($esAdminSidebar) {
+    $itemsSidebar['usuarios_reset'] = ['Accesos / Claves', 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z'];
+}
 ?>
 <aside id="sidebar" class="sidebar-bg bg-slate-900 w-64 flex-shrink-0 flex flex-col h-full text-slate-300 transition-transform duration-300 fixed inset-y-0 left-0 z-40 -translate-x-full lg:static lg:translate-x-0">
     <div class="h-16 flex items-center px-6 border-b border-slate-700/50">

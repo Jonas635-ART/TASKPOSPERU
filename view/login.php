@@ -71,7 +71,7 @@
                     <div class="form-group">
                         <div class="form-header">
                             <label class="form-label" for="password">Contraseña</label>
-                            <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+                            <a href="index.php?action=recuperar" class="forgot-link">¿Olvidaste tu contraseña?</a>
                         </div>
                         <div class="input-wrapper">
                             <!-- Icono de candado -->

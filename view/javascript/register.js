@@ -9,20 +9,22 @@ document.addEventListener('DOMContentLoaded', () => {
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // Limpiar y ocultar alertas previas
         mensajeAlerta.style.display = 'none';
         mensajeAlerta.textContent = '';
         
-        // Obtener contraseñas para validación local rápida
         const password = document.getElementById('password').value;
         const confirm = document.getElementById('confirm_password').value;
+
+        if (password.length < 6) {
+            mostrarAlerta('La contraseña debe tener al menos 6 caracteres.', false);
+            return;
+        }
 
         if (password !== confirm) {
             mostrarAlerta('Las contraseñas no coinciden.', false);
             return;
         }
 
-        // Bloquear botón para evitar múltiples envíos
         const originalBtnHtml = btnSubmit.innerHTML;
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = 'Registrando...';
@@ -38,15 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.success) {
-                // Registro exitoso: Alerta verde y redirección
                 mostrarAlerta(data.message, true);
-                
-                // Esperar 2 segundos para que el usuario lea el mensaje antes de redirigir
                 setTimeout(() => {
                     window.location.href = data.redirect;
                 }, 2000);
             } else {
-                // Error del servidor (ej. correo duplicado, código inválido)
                 mostrarAlerta(data.message, false);
                 btnSubmit.disabled = false;
                 btnSubmit.innerHTML = originalBtnHtml;
@@ -59,19 +57,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Función auxiliar para pintar la alerta de verde (éxito) o rojo (error)
     function mostrarAlerta(mensaje, esExito) {
         mensajeAlerta.textContent = mensaje;
         mensajeAlerta.style.display = 'block';
         
         if (esExito) {
-            mensajeAlerta.style.background = '#f0fdf4'; // bg-green-50
-            mensajeAlerta.style.color = '#15803d';      // text-green-700
-            mensajeAlerta.style.borderColor = '#86efac';// border-green-300
+            mensajeAlerta.style.background = '#f0fdf4';
+            mensajeAlerta.style.color = '#15803d';
+            mensajeAlerta.style.borderColor = '#86efac';
         } else {
-            mensajeAlerta.style.background = '#fef2f2'; // bg-red-50
-            mensajeAlerta.style.color = '#b91c1c';      // text-red-700
-            mensajeAlerta.style.borderColor = '#f87171';// border-red-400
+            mensajeAlerta.style.background = '#fef2f2';
+            mensajeAlerta.style.color = '#b91c1c';
+            mensajeAlerta.style.borderColor = '#f87171';
         }
     }
 });
