@@ -50,6 +50,7 @@ class Requerimiento {
                     FROM requerimientos r
                     LEFT JOIN requerimientos_responsables rr ON r.id_requerimiento = rr.id_requerimiento
                     LEFT JOIN usuarios u2 ON rr.id_usuario = u2.id_usuario
+                    LEFT JOIN proyectos p ON r.id_proyecto = p.id_proyecto
                     WHERE r.id_solicitante = :id_solicitante 
                     ORDER BY r.fecha_creacion DESC";
             $stmt = $this->pdo->prepare($sql);
@@ -85,17 +86,41 @@ class Requerimiento {
         }
     }
 
+    // Obtener KPI de proyectos con su cantidad de tickets para el Admin
+    public function obtenerKpiProyectos() {
+        try {
+            $sql = "SELECT p.id_proyecto, p.nombre_proyecto,
+                           COUNT(r.id_requerimiento) AS total_tickets,
+                           SUM(CASE WHEN r.estado = 'pendiente' THEN 1 ELSE 0 END) AS pendientes,
+                           SUM(CASE WHEN r.estado = 'en proceso' THEN 1 ELSE 0 END) AS en_proceso,
+                           SUM(CASE WHEN r.estado = 'terminado' THEN 1 ELSE 0 END) AS terminados,
+                           SUM(CASE WHEN r.prioridad IN ('critica', 'alta') AND r.estado <> 'terminado' THEN 1 ELSE 0 END) AS urgentes_activos,
+                           (SELECT STRING_AGG(u.nombre, ', ') FROM proyectos_miembros pm INNER JOIN usuarios u ON pm.id_usuario = u.id_usuario WHERE pm.id_proyecto = p.id_proyecto) AS miembros,
+                           (SELECT COUNT(*) FROM proyectos_miembros pm WHERE pm.id_proyecto = p.id_proyecto) AS total_miembros
+                    FROM proyectos p
+                    LEFT JOIN requerimientos r ON p.id_proyecto = r.id_proyecto
+                    GROUP BY p.id_proyecto, p.nombre_proyecto
+                    ORDER BY total_tickets DESC, p.nombre_proyecto ASC";
+            return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error en obtenerKpiProyectos: " . $e->getMessage());
+            return [];
+        }
+    }
+
 
     // Listar TODOS los tickets del sistema (Explícito para evitar pérdida de columnas)
     public function listarTodos() {
         try {
             $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado, r.fecha_creacion, 
                            u1.nombre AS solicitante, u1.correo AS correo_solicitante, u1.rol AS rol_solicitante, 
-                           u2.nombre AS responsable
+                           u2.nombre AS responsable,
+                           p.nombre_proyecto AS proyecto
                     FROM requerimientos r
                     INNER JOIN usuarios u1 ON r.id_solicitante = u1.id_usuario
                     LEFT JOIN requerimientos_responsables rr ON r.id_requerimiento = rr.id_requerimiento
                     LEFT JOIN usuarios u2 ON rr.id_usuario = u2.id_usuario
+                    LEFT JOIN proyectos p ON r.id_proyecto = p.id_proyecto
                     ORDER BY r.fecha_creacion DESC";
             return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) { return []; }
@@ -103,11 +128,13 @@ class Requerimiento {
     public function obtenerDetalle($id_requerimiento) {
         try {
             $sql = "SELECT r.*, u1.nombre AS solicitante, u1.correo AS correo_solicitante, u1.rol AS rol_solicitante,
-                           u2.nombre AS responsable, u2.id_usuario AS id_responsable
+                           u2.nombre AS responsable,
+                           p.nombre_proyecto AS proyecto, u2.id_usuario AS id_responsable
                     FROM requerimientos r
                     INNER JOIN usuarios u1 ON r.id_solicitante = u1.id_usuario
                     LEFT JOIN requerimientos_responsables rr ON r.id_requerimiento = rr.id_requerimiento
                     LEFT JOIN usuarios u2 ON rr.id_usuario = u2.id_usuario
+                    LEFT JOIN proyectos p ON r.id_proyecto = p.id_proyecto
                     WHERE r.id_requerimiento = :id_requerimiento LIMIT 1";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([':id_requerimiento' => $id_requerimiento]);
@@ -117,7 +144,7 @@ class Requerimiento {
 
     public function listarSubtareas($id_requerimiento) {
         try {
-            $sql = "SELECT * FROM subtareas WHERE id_requerimiento = :id_requerimiento ORDER BY id_subtarea ASC";
+            $sql = "SELECT s.*, sr.id_usuario AS id_responsable, u.nombre AS responsable, u.rol AS rol_responsable FROM subtareas s LEFT JOIN subtareas_responsables sr ON s.id_subtarea = sr.id_subtarea LEFT JOIN usuarios u ON sr.id_usuario = u.id_usuario WHERE s.id_requerimiento = :id_requerimiento ORDER BY s.id_subtarea ASC";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([':id_requerimiento' => $id_requerimiento]);
             return $stmt->fetchAll();
@@ -144,12 +171,32 @@ class Requerimiento {
         } catch (PDOException $e) { return false; }
     }
 
-    public function insertarSubtarea($id_requerimiento, $descripcion) {
+    public function insertarSubtarea($id_requerimiento, $descripcion, $id_responsable = null) {
         try {
-            $sql = "INSERT INTO subtareas (id_requerimiento, descripcion) VALUES (:id_req, :desc)";
+            $sql = "INSERT INTO subtareas (id_requerimiento, descripcion) VALUES (:id_req, :desc) RETURNING id_subtarea";
             $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([':id_req' => $id_requerimiento, ':desc' => $descripcion]);
+            $stmt->execute([':id_req' => $id_requerimiento, ':desc' => $descripcion]);
+            $id_subtarea = (int)$stmt->fetchColumn();
+            if ($id_subtarea && !empty($id_responsable)) {
+                $this->asignarResponsableSubtarea($id_subtarea, (int)$id_responsable);
+            }
+            return $id_subtarea > 0;
         } catch (PDOException $e) { return false; }
+    }
+
+    // Asignar o quitar el responsable de una subtarea (si $id_usuario es null/0 se quita la asignación)
+    public function asignarResponsableSubtarea($id_subtarea, $id_usuario = null) {
+        try {
+            $this->pdo->prepare("DELETE FROM subtareas_responsables WHERE id_subtarea = ?")->execute([(int)$id_subtarea]);
+            if (!empty($id_usuario)) {
+                $sql = "INSERT INTO subtareas_responsables (id_subtarea, id_usuario) VALUES (?, ?)";
+                return $this->pdo->prepare($sql)->execute([(int)$id_subtarea, (int)$id_usuario]);
+            }
+            return true;
+        } catch (PDOException $e) {
+            error_log("Error en asignarResponsableSubtarea: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function insertarComentario($id_requerimiento, $id_usuario, $mensaje) {
@@ -194,12 +241,14 @@ class Requerimiento {
             $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado, r.fecha_creacion,
                            u1.nombre AS solicitante,
                            u2.nombre AS responsable,
+                           p.nombre_proyecto AS proyecto,
                            (SELECT COUNT(*) FROM subtareas s WHERE s.id_requerimiento = r.id_requerimiento) AS total_subtareas,
                            (SELECT COUNT(*) FROM subtareas s WHERE s.id_requerimiento = r.id_requerimiento AND s.estado = 'terminado') AS subtareas_completadas
                     FROM requerimientos r
                     INNER JOIN usuarios u1 ON r.id_solicitante = u1.id_usuario
                     LEFT JOIN requerimientos_responsables rr ON r.id_requerimiento = rr.id_requerimiento
                     LEFT JOIN usuarios u2 ON rr.id_usuario = u2.id_usuario
+                    LEFT JOIN proyectos p ON r.id_proyecto = p.id_proyecto
                     ORDER BY r.id_requerimiento DESC";
             $stmt = $this->pdo->query($sql);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -240,10 +289,12 @@ class Requerimiento {
     public function listarPorProyecto($id_proyecto) {
         try {
             $sql = "SELECT r.id_requerimiento, r.titulo, r.prioridad, r.estado, r.fecha_creacion,
-                           u2.nombre AS responsable
+                           u2.nombre AS responsable,
+                           p.nombre_proyecto AS proyecto
                     FROM requerimientos r
                     LEFT JOIN requerimientos_responsables rr ON r.id_requerimiento = rr.id_requerimiento
                     LEFT JOIN usuarios u2 ON rr.id_usuario = u2.id_usuario
+                    LEFT JOIN proyectos p ON r.id_proyecto = p.id_proyecto
                     WHERE r.id_proyecto = :id_proyecto
                     ORDER BY r.fecha_creacion DESC";
             $stmt = $this->pdo->prepare($sql);

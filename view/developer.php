@@ -192,6 +192,20 @@ if (!isset($requerimientos)) $requerimientos = [];
                     <h1 class="text-2xl font-black text-slate-800">Gestión de Requerimientos y Tareas</h1>
                     <p class="text-sm text-slate-500 mt-1 max-w-2xl">Supervisa, asigna y da seguimiento a los tickets del equipo en tiempo real con trazabilidad integral y métricas de desempeño.</p>
                 </div>
+                <?php if (strtolower($usuario['rol'] ?? '') === 'admin'): ?>
+                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                    <a href="index.php?action=exportar_excel" class="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Excel: Tickets General
+                    </a>
+                    <a href="index.php?action=exportar_excel_proyectos" class="inline-flex items-center gap-2 px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-lg shadow-sm transition" title="Ver qué proyecto requiere más ayuda">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Excel: Carga por Proyectos
+                    </a>
+                </div>
+                <?php endif; ?>
+                <div>
+                </div>
             </div>
 
             <!-- Dashboard KPIs -->
@@ -251,6 +265,64 @@ if (!isset($requerimientos)) $requerimientos = [];
                         <h3 class="text-3xl font-black text-slate-800 leading-none"><?= $estadisticas['terminados'] ?></h3>
                     </div>
                     <p class="text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100">Resueltos exitosamente</p>
+                </div>
+            </div>
+
+            <!-- KPI de Proyectos (Exclusivo Admin) -->
+            <?php if (strtolower($usuario['rol'] ?? '') === 'admin'): ?>
+            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm mb-6">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded bg-violet-50 text-violet-600 flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Tickets por Proyecto</h2>
+                            <p class="text-[11px] text-slate-400">Total de proyectos activos: <span class="font-bold text-slate-600"><?= count($proyectosKpi ?? []) ?></span></p>
+                        </div>
+                    </div>
+                    <a href="index.php?action=proyectos" class="text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-1">
+                        Ver todos los proyectos &rarr;
+                    </a>
+                    <a href="index.php?action=exportar_excel_proyectos" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Exportar Excel por Proyectos
+                    </a><?php if (false): ?><a><?php endif; ?>
+                    </a>
+                </div>
+
+                <?php if (empty($proyectosKpi)): ?>
+                    <p class="text-xs text-slate-400 italic py-2">No hay proyectos registrados todavía.</p>
+                <?php else: ?>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <?php foreach ($proyectosKpi as $proy): ?>
+                        <div class="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 hover:border-indigo-200 hover:bg-indigo-50/20 transition flex flex-col justify-between">
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <p class="text-xs font-bold text-slate-700 line-clamp-1" title="<?= htmlspecialchars($proy['nombre_proyecto']) ?>">
+                                    <?= htmlspecialchars($proy['nombre_proyecto']) ?>
+                                </p>
+                                <span class="px-2 py-0.5 text-[11px] font-black rounded-full bg-indigo-100 text-indigo-700 shrink-0">
+                                    <?= (int)$proy['total_tickets'] ?> <?= (int)$proy['total_tickets'] === 1 ? 'ticket' : 'tickets' ?>
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-3 text-[10px] font-semibold text-slate-500 pt-2 border-t border-slate-200/60">
+                                <span class="flex items-center gap-1" title="Pendientes">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> <?= (int)$proy['pendientes'] ?> pend.
+                                </span>
+                                <span class="flex items-center gap-1" title="En proceso">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> <?= (int)$proy['en_proceso'] ?> proc.
+                                </span>
+                                <span class="flex items-center gap-1" title="Terminados">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> <?= (int)$proy['terminados'] ?> term.
+                                </span>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+            <div><div>
                 </div>
             </div>
 

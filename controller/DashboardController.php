@@ -29,6 +29,7 @@ class DashboardController {
         if ($rol === 'admin' || $rol === 'developer') {
             $requerimientos = $reqModel->listarTodos();
             $estadisticas = $reqModel->obtenerEstadisticasGlobales();
+            $proyectosKpi = ($rol === 'admin') ? $reqModel->obtenerKpiProyectos() : [];
             
             $total = count($requerimientos);
             $pendientes = 0; 

@@ -174,7 +174,15 @@ $labelRol = $esAdmin ? 'Admin' : $usuario['correo'];
                     <div class="border-t border-slate-200 pt-4">
                         <label class="block text-sm font-bold text-slate-700 mb-2">Subtareas Técnicas</label>
                         <div id="contenedor-subtareas" class="space-y-2 mb-2">
-                            <input type="text" name="subtareas[]" placeholder="Ej: Actualizar endpoint de facturación..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500">
+                            <div class="subtarea-row flex flex-col sm:flex-row gap-2">
+                                <input type="text" name="subtareas[]" placeholder="Ej: Actualizar endpoint de facturación..." class="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500">
+                                <select name="subtareas_responsable[]" class="sm:w-56 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 outline-none focus:border-indigo-500">
+                                    <option value="">-- Responsable (opcional) --</option>
+                                    <?php foreach ($tecnicos as $tec): ?>
+                                        <option value="<?= (int)$tec['id_usuario'] ?>"><?= htmlspecialchars($tec['nombre']) ?> (<?= ucfirst($tec['rol']) ?>)</option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
                         </div>
                         <button type="button" onclick="agregarSubtarea()" class="text-xs font-bold text-indigo-600 hover:underline">+ Agregar otra subtarea</button>
                     </div>
@@ -195,6 +203,16 @@ $labelRol = $esAdmin ? 'Admin' : $usuario['correo'];
                 <script>
                     function agregarSubtarea() {
                         const contenedor = document.getElementById('contenedor-subtareas');
+                        const baseRow = contenedor.querySelector('.subtarea-row');
+                        if (baseRow) {
+                            const nuevaFila = baseRow.cloneNode(true);
+                            const inp = nuevaFila.querySelector('input[name="subtareas[]"]');
+                            const sel = nuevaFila.querySelector('select[name="subtareas_responsable[]"]');
+                            if (inp) { inp.value = ''; inp.placeholder = 'Nueva subtarea...'; }
+                            if (sel) { sel.value = ''; }
+                            contenedor.appendChild(nuevaFila);
+                            return;
+                        }
                         const input = document.createElement('input');
                         input.type = 'text';
                         input.name = 'subtareas[]';

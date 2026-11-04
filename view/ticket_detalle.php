@@ -117,10 +117,28 @@ $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estad
                                 <p class="text-xs text-slate-500 italic">No hay subtareas registradas.</p>
                             <?php else: ?>
                                 <?php foreach ($subtareas as $sub): ?>
-                                <div class="flex items-start gap-3 p-2 hover:bg-slate-50 rounded group">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2.5 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-100 group">
+                                    <div class="flex items-start gap-3 flex-1 min-w-0">
                                     <input type="checkbox" data-id="<?= $sub['id_subtarea'] ?>" <?= $sub['estado'] === 'terminado' ? 'checked' : '' ?> class="subtarea-check mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 cursor-pointer">
                                     <div class="flex-1">
                                         <label class="text-sm font-medium text-slate-700 <?= $sub['estado'] === 'terminado' ? 'line-through text-slate-400' : '' ?>"><?= htmlspecialchars($sub['descripcion']) ?></label>
+                                    </div>
+                                    </div>
+                                    <div class="shrink-0 sm:ml-auto pl-7 sm:pl-0">
+                                        <?php if ($usuario['rol'] !== 'cliente'): ?>
+                                        <select data-subtarea="<?= (int)$sub['id_subtarea'] ?>" class="subtarea-responsable w-full sm:w-44 text-[11px] bg-white border border-slate-200 rounded-md px-2 py-1 text-slate-600 font-semibold outline-none focus:border-indigo-500 cursor-pointer">
+                                            <option value="">-- Sin responsable --</option>
+                                            <?php foreach ($tecnicos as $tec): ?>
+                                                <option value="<?= (int)$tec['id_usuario'] ?>" <?= ((int)($sub['id_responsable'] ?? 0) === (int)$tec['id_usuario']) ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($tec['nombre']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <?php elseif (!empty($sub['responsable'])): ?>
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
+                                            <?= htmlspecialchars($sub['responsable']) ?>
+                                        </span>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                                 <?php endforeach; ?>
@@ -130,7 +148,16 @@ $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estad
                         <!-- Añadir Subtarea -->
                         <?php if ($usuario['rol'] !== 'cliente'): ?>
                         <div class="mt-4 pt-3 border-t border-slate-100">
-                            <input type="text" id="inputSubtarea" data-ticket="<?= $ticket['id_requerimiento'] ?>" placeholder="Añadir subtarea y presionar Enter..." class="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-3 text-xs focus:ring-1 focus:ring-indigo-500 outline-none">
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input type="text" id="inputSubtarea" data-ticket="<?= $ticket['id_requerimiento'] ?>" placeholder="Añadir subtarea y presionar Enter..." class="flex-1 bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-xs focus:ring-1 focus:ring-indigo-500 outline-none">
+                                <select id="selResponsableSubtareaNueva" class="sm:w-44 bg-slate-50 border border-slate-200 rounded-lg py-2 px-2.5 text-xs font-semibold text-slate-600 outline-none focus:border-indigo-500">
+                                    <option value="">-- Responsable (opc.) --</option>
+                                    <?php foreach ($tecnicos as $tec): ?>
+                                        <option value="<?= (int)$tec['id_usuario'] ?>"><?= htmlspecialchars($tec['nombre']) ?> (<?= ucfirst($tec['rol']) ?>)</option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="button" id="btnAgregarSubtarea" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shrink-0">Añadir</button>
+                            </div>
                         </div>
                         <?php endif; ?>
                     </div>

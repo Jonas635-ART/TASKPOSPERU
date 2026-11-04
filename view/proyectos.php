@@ -172,6 +172,14 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
                 <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 <input type="text" placeholder="Buscar un proyecto" class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
             </div>
+            <div class="flex justify-end">
+            <?php if (strtolower($usuario['rol'] ?? '') === 'admin'): ?>
+                <a href="index.php?action=exportar_excel_proyectos" class="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Exportar Diagnóstico de Proyectos (Excel)
+                </a>
+            <?php endif; ?>
+            </div>
             
             <!-- Píldoras de filtro -->
             <div class="flex flex-wrap gap-3">

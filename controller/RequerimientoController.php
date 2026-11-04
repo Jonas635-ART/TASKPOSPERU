@@ -200,6 +200,7 @@ class RequerimientoController {
             $prioridad = $this->normalizarPrioridad($_POST['prioridad'] ?? 'media');
             $id_responsable = !empty($_POST['id_responsable']) ? (int)$_POST['id_responsable'] : null;
             $subtareas = $_POST['subtareas'] ?? []; 
+            $subtareas_resp = $_POST['subtareas_responsable'] ?? [];
             $id_solicitante = $_SESSION['usuario']['id'];
 
             if (!empty(trim($titulo)) && !empty(trim($descripcion))) {
@@ -215,9 +216,10 @@ class RequerimientoController {
                     }
 
                     // 3. Usar tu función 'insertarSubtarea'
-                    foreach ((array)$subtareas as $subtarea) {
+                    foreach ((array)$subtareas as $idx => $subtarea) {
                         if (!empty(trim($subtarea))) {
-                            $reqModel->insertarSubtarea($id_req, $subtarea);
+                            $id_resp_sub = !empty($subtareas_resp[$idx]) ? (int)$subtareas_resp[$idx] : null;
+                            $reqModel->insertarSubtarea($id_req, $subtarea, $id_resp_sub);
                         }
                     }
 
@@ -252,12 +254,29 @@ class RequerimientoController {
         header('Content-Type: application/json');
         $id_req = (int)($_POST['id_requerimiento'] ?? 0);
         $desc = trim($_POST['descripcion'] ?? '');
+        $id_resp = !empty($_POST['id_responsable']) ? (int)$_POST['id_responsable'] : null;
         
         if($id_req && $desc) {
             $reqModel = new Requerimiento();
-            $res = $reqModel->insertarSubtarea($id_req, $desc);
+            $res = $reqModel->insertarSubtarea($id_req, $desc, $id_resp);
             echo json_encode(['success' => $res]);
         } else { echo json_encode(['success' => false]); }
+        exit();
+    }
+
+    // AJAX: Asignar o cambiar el responsable de una subtarea
+    public function asignarResponsableSubtarea() {
+        header('Content-Type: application/json');
+        $id_sub = (int)($_POST['id_subtarea'] ?? 0);
+        $id_usr = !empty($_POST['id_usuario']) ? (int)$_POST['id_usuario'] : null;
+
+        if (!$id_sub) {
+            $this->errorJson(400, 'Falta el ID de la subtarea.');
+        }
+
+        $reqModel = new Requerimiento();
+        $res = $reqModel->asignarResponsableSubtarea($id_sub, $id_usr);
+        echo json_encode(['success' => $res]);
         exit();
     }
 
@@ -413,7 +432,228 @@ class RequerimientoController {
         $sheet->setTitle('Requerimientos');
 
         // Definir Cabeceras
-        $cabeceras = ['A1' => 'ID Ticket', 'B1' => 'Título', 'C1' => 'Prioridad', 'D1' => 'Estado', 'E1' => 'Solicitante', 'F1' => 'Responsable Asignado', 'G1' => 'Fecha de Creación'];
+        $cabeceras = ['A1' => 'ID Ticket', 'B1' => 'Proyecto', 'C1' => 'Título', 'D1' => 'Prioridad', 'E1' => 'Estado', 'F1' => 'Solicitante', 'G1' => 'Responsable Asignado', 'H1' => 'Fecha de Creación'];
+        foreach ($cabeceras as $celda => $texto) {
+            $sheet->setCellValue($celda, $texto);
+            $sheet->getStyle($celda)->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+            $sheet->getStyle($celda)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF312E81');
+        }
+
+        $fila = 2;
+        foreach ($requerimientos as $req) {
+            $fecha = isset($req['fecha_creacion']) ? date('d/m/Y H:i', strtotime($req['fecha_creacion'])) : 'N/A';
+            $sheet->setCellValue('A' . $fila, '#TK-' . $req['id_requerimiento']);
+            $sheet->setCellValue('B' . $fila, empty($req['proyecto']) ? 'Sin Proyecto' : $req['proyecto']);
+            $sheet->setCellValue('C' . $fila, $req['titulo']);
+            $sheet->setCellValue('D' . $fila, strtoupper($req['prioridad']));
+            $sheet->setCellValue('E' . $fila, strtoupper($req['estado']));
+            $sheet->setCellValue('F' . $fila, $req['solicitante']);
+            $sheet->setCellValue('G' . $fila, empty($req['responsable']) ? 'Sin Asignar' : $req['responsable']);
+            $sheet->setCellValue('H' . $fila, $fecha);
+            $fila++;
+        }
+
+        foreach (range('A', 'H') as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        }
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="Reporte_Tickets_General_PosPeru.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save('php://output');
+        exit;
+    }
+
+    public function exportarExcelProyectos() {
+        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+        if (!isset($_SESSION['usuario']) || strtolower($_SESSION['usuario']['rol']) !== 'admin') {
+            header("Location: index.php?action=dashboard");
+            exit();
+        }
+
+        $reqModel = new Requerimiento();
+        $proyectos = $reqModel->obtenerKpiProyectos();
+        $requerimientos = $reqModel->listarTodos();
+
+        // Ordenar proyectos priorizando los que requieren más ayuda (más pendientes/en proceso y urgentes)
+        usort($proyectos, function ($a, $b) {
+            $activosA = (int)$a['pendientes'] + (int)$a['en_proceso'];
+            $activosB = (int)$b['pendientes'] + (int)$b['en_proceso'];
+            if ($activosB !== $activosA) return $activosB <=> $activosA;
+            return ((int)($b['urgentes_activos'] ?? 0)) <=> ((int)($a['urgentes_activos'] ?? 0));
+        });
+
+        require_once __DIR__ . '/../vendor/autoload.php';
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+
+        // ==========================================================
+        // HOJA 1: Resumen y Diagnóstico por Proyecto
+        // ==========================================================
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Diagnóstico Proyectos');
+
+        $cabeceras = [
+            'A1' => 'ID Proyecto',
+            'B1' => 'Proyecto',
+            'C1' => 'Técnicos en Proyecto',
+            'D1' => 'Total Tickets',
+            'E1' => 'Pendientes',
+            'F1' => 'En Proceso',
+            'G1' => 'Terminados',
+            'H1' => 'Críticos / Alta (Activos)',
+            'I1' => '% Avance',
+            'J1' => 'Diagnóstico / Nivel de Ayuda'
+        ];
+        foreach ($cabeceras as $celda => $texto) {
+            $sheet->setCellValue($celda, $texto);
+            $sheet->getStyle($celda)->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+            $sheet->getStyle($celda)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF4C1D95');
+        }
+
+        $fila = 2;
+        foreach ($proyectos as $p) {
+            $total      = (int)$p['total_tickets'];
+            $pendientes = (int)$p['pendientes'];
+            $enProceso  = (int)$p['en_proceso'];
+            $terminados = (int)$p['terminados'];
+            $urgentes   = (int)($p['urgentes_activos'] ?? 0);
+            $numTec     = (int)($p['total_miembros'] ?? 0);
+            $activos    = $pendientes + $enProceso;
+            $avance     = $total > 0 ? round(($terminados / $total) * 100, 1) . '%' : '0%';
+
+            // Determinar qué proyecto requiere más ayuda
+            if ($activos === 0) {
+                $diagnostico = 'AL DÍA / SIN PENDIENTES';
+                $colorFondo  = 'FFD1FAE5'; // Verde claro
+            } elseif ($urgentes >= 2 || $pendientes >= 3 || ($activos > 0 && $numTec === 0)) {
+                $diagnostico = 'REQUIERE APOYO URGENTE';
+                $colorFondo  = 'FFFEE2E2'; // Rojo claro
+            } elseif ($activos >= 2 || $urgentes === 1) {
+                $diagnostico = 'CARGA MEDIA / MONITOREAR';
+                $colorFondo  = 'FFFEF3C7'; // Ámbar claro
+            } else {
+                $diagnostico = 'CARGA CONTROLADA';
+                $colorFondo  = 'FFE0E7FF'; // Azul claro
+            }
+
+            $miembrosTxt = !empty($p['miembros']) ? $p['miembros'] . " ({$numTec})" : 'Sin miembros asignados (0)';
+
+            $sheet->setCellValue('A' . $fila, '#PR-' . $p['id_proyecto']);
+            $sheet->setCellValue('B' . $fila, $p['nombre_proyecto']);
+            $sheet->setCellValue('C' . $fila, $miembrosTxt);
+            $sheet->setCellValue('D' . $fila, $total);
+            $sheet->setCellValue('E' . $fila, $pendientes);
+            $sheet->setCellValue('F' . $fila, $enProceso);
+            $sheet->setCellValue('G' . $fila, $terminados);
+            $sheet->setCellValue('H' . $fila, $urgentes);
+            $sheet->setCellValue('I' . $fila, $avance);
+            $sheet->setCellValue('J' . $fila, $diagnostico);
+
+            $sheet->getStyle('J' . $fila)->getFont()->setBold(true);
+            $sheet->getStyle('J' . $fila)->getFill()
+                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setARGB($colorFondo);
+
+            $fila++;
+        }
+
+        // Contabilizar tickets sin proyecto para que el Admin también los detecte
+        $sinProy = ['total' => 0, 'pendiente' => 0, 'en proceso' => 0, 'terminado' => 0, 'urgentes' => 0];
+        foreach ($requerimientos as $r) {
+            if (empty($r['proyecto'])) {
+                $sinProy['total']++;
+                $est = strtolower($r['estado']);
+                if (isset($sinProy[$est])) $sinProy[$est]++;
+                if (in_array(strtolower($r['prioridad']), ['critica', 'alta'], true) && $est !== 'terminado') {
+                    $sinProy['urgentes']++;
+                }
+            }
+        }
+        if ($sinProy['total'] > 0) {
+            $avanceSin = round(($sinProy['terminado'] / $sinProy['total']) * 100, 1) . '%';
+            $sheet->setCellValue('A' . $fila, 'S/P');
+            $sheet->setCellValue('B' . $fila, 'Tickets Sin Proyecto Asignado');
+            $sheet->setCellValue('C' . $fila, 'N/A');
+            $sheet->setCellValue('D' . $fila, $sinProy['total']);
+            $sheet->setCellValue('E' . $fila, $sinProy['pendiente']);
+            $sheet->setCellValue('F' . $fila, $sinProy['en proceso']);
+            $sheet->setCellValue('G' . $fila, $sinProy['terminado']);
+            $sheet->setCellValue('H' . $fila, $sinProy['urgentes']);
+            $sheet->setCellValue('I' . $fila, $avanceSin);
+            $sheet->setCellValue('J' . $fila, ($sinProy['pendiente'] + $sinProy['en proceso'] > 0) ? 'ASIGNAR A UN PROYECTO' : 'COMPLETADOS');
+            $sheet->getStyle('A' . $fila . ':J' . $fila)->getFont()->setItalic(true);
+        }
+
+        foreach (range('A', 'J') as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        }
+
+        // ==========================================================
+        // HOJA 2: Detalle de Tickets Agrupados por Proyecto
+        // ==========================================================
+        $sheetDetalle = $spreadsheet->createSheet();
+        $sheetDetalle->setTitle('Detalle por Proyecto');
+
+        $cabDetalle = [
+            'A1' => 'Proyecto',
+            'B1' => 'ID Ticket',
+            'C1' => 'Título del Requerimiento',
+            'D1' => 'Prioridad',
+            'E1' => 'Estado',
+            'F1' => 'Responsable Asignado',
+            'G1' => 'Solicitante',
+            'H1' => 'Fecha de Creación'
+        ];
+        foreach ($cabDetalle as $celda => $texto) {
+            $sheetDetalle->setCellValue($celda, $texto);
+            $sheetDetalle->getStyle($celda)->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+            $sheetDetalle->getStyle($celda)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1E293B');
+        }
+
+        // Ordenar tickets por nombre de proyecto y estado activo primero
+        usort($requerimientos, function ($a, $b) {
+            $pA = $a['proyecto'] ?? 'ZZZ_Sin Proyecto';
+            $pB = $b['proyecto'] ?? 'ZZZ_Sin Proyecto';
+            if ($pA !== $pB) return strcmp($pA, $pB);
+            return ((int)$b['id_requerimiento']) <=> ((int)$a['id_requerimiento']);
+        });
+
+        $filaD = 2;
+        foreach ($requerimientos as $req) {
+            $fecha = isset($req['fecha_creacion']) ? date('d/m/Y H:i', strtotime($req['fecha_creacion'])) : 'N/A';
+            $sheetDetalle->setCellValue('A' . $filaD, empty($req['proyecto']) ? 'Sin Proyecto' : $req['proyecto']);
+            $sheetDetalle->setCellValue('B' . $filaD, '#TK-' . $req['id_requerimiento']);
+            $sheetDetalle->setCellValue('C' . $filaD, $req['titulo']);
+            $sheetDetalle->setCellValue('D' . $filaD, strtoupper($req['prioridad']));
+            $sheetDetalle->setCellValue('E' . $filaD, strtoupper($req['estado']));
+            $sheetDetalle->setCellValue('F' . $filaD, empty($req['responsable']) ? 'Sin Asignar' : $req['responsable']);
+            $sheetDetalle->setCellValue('G' . $filaD, $req['solicitante']);
+            $sheetDetalle->setCellValue('H' . $filaD, $fecha);
+            $filaD++;
+        }
+
+        foreach (range('A', 'H') as $columnID) {
+            $sheetDetalle->getColumnDimension($columnID)->setAutoSize(true);
+        }
+
+        $spreadsheet->setActiveSheetIndex(0);
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="Reporte_Tickets_Por_Proyectos_PosPeru.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save('php://output');
+        exit;
+    }
+
+    private function _unusedLegacyExportPlaceholder() {
+        if (false) {
+            return;
         foreach ($cabeceras as $celda => $texto) {
             $sheet->setCellValue($celda, $texto);
             $sheet->getStyle($celda)->getFont()->setBold(true);
@@ -447,6 +687,10 @@ class RequerimientoController {
         $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
         $writer->save('php://output');
         exit;
+        }
+    }
+
+    private function _unusedClose() {
     }
 
     public function eliminarTicket() {

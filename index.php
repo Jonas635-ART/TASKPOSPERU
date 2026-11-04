@@ -46,14 +46,16 @@ $rutas = [
     // Gestión técnica de tickets
     'nuevo_ticket'            => ['RequerimientoController', 'nuevoTicket',        TECNICOS],
     'guardar_ticket'          => ['RequerimientoController', 'guardarTicket',      TECNICOS],
-    'api_agregar_subtarea'    => ['RequerimientoController', 'agregarSubtarea',    TECNICOS],
+    'api_agregar_subtarea'    => ['RequerimientoController', 'agregarSubtarea',            TECNICOS],
+    'api_asignar_subtarea'    => ['RequerimientoController', 'asignarResponsableSubtarea', TECNICOS],
     'api_marcar_subtarea'     => ['RequerimientoController', 'marcarSubtarea',     TECNICOS],
     'api_actualizar_estado'   => ['RequerimientoController', 'actualizarEstado',   TECNICOS],
     'api_asignar_responsable' => ['RequerimientoController', 'asignarResponsable', TECNICOS],
     'kanban'                  => ['RequerimientoController', 'verKanban',          TECNICOS],
     'mis_asignaciones'        => ['RequerimientoController', 'misAsignaciones',    TECNICOS],
     'eliminar_ticket'         => ['RequerimientoController', 'eliminarTicket',     TECNICOS],
-    'exportar_excel'          => ['RequerimientoController', 'exportarExcel',      SOLO_ADMIN],
+    'exportar_excel'          => ['RequerimientoController', 'exportarExcel',          SOLO_ADMIN],
+    'exportar_excel_proyectos'=> ['RequerimientoController', 'exportarExcelProyectos', SOLO_ADMIN],
 
     // Proyectos
     'proyectos'               => ['ProyectoController', 'index',    TECNICOS],
