@@ -343,7 +343,7 @@ if (!isset($requerimientos)) $requerimientos = [];
     </main>
 
     <!-- Archivo JS separado -->
-    <script src="view/javascript/cliente.js?v=<?= time() ?>"></script>
+    <script src="view/javascript/cliente.js?v=<?= filemtime(__DIR__ . '/javascript/cliente.js') ?>"></script>
 </body>
 
 </html>

@@ -35,7 +35,8 @@ $rutas = [
     'api_generar_codigo_reset'=> ['AuthController', 'generarCodigoAdmin',      SOLO_ADMIN],
 
     // Panel principal
-    'dashboard'               => ['DashboardController', 'index',        'autenticado'],
+    'dashboard'               => ['DashboardController', 'index',             'autenticado'],
+    'api_sync_estado'         => ['DashboardController', 'syncEstado',        'autenticado'],
 
     // Tickets (la propiedad del ticket se valida dentro del controlador)
     'ver_ticket'              => ['RequerimientoController', 'verDetalle',         'autenticado'],

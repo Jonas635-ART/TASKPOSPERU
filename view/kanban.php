@@ -44,7 +44,7 @@ $columnas = [
     <title>Kanban de Requerimientos | PosPerú PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="view/css/developer.css">
-    <link rel="stylesheet" href="view/css/kanban.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="view/css/kanban.css?v=<?= filemtime(__DIR__ . '/css/kanban.css') ?>">
 </head>
 <body class="flex h-dvh overflow-hidden text-slate-800 antialiased">
 
@@ -244,6 +244,6 @@ $columnas = [
     </main>
 
 
-    <script src="view/javascript/kanban.js?v=<?= time() ?>"></script>
+    <script src="view/javascript/kanban.js?v=<?= filemtime(__DIR__ . '/javascript/kanban.js') ?>"></script>
 </body>
 </html>

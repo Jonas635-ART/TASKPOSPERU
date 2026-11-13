@@ -186,8 +186,8 @@ if (!isset($requerimientos)) $requerimientos = [];
             <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
                 <div>
                     <div class="flex items-center gap-3 mb-1">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">SLA Activo • 99.4%</span>
-                        <span class="text-xs text-slate-400">Sincronizado hace 2 min</span>
+
+
                     </div>
                     <h1 class="text-2xl font-black text-slate-800">Gestión de Requerimientos y Tareas</h1>
                     <p class="text-sm text-slate-500 mt-1 max-w-2xl">Supervisa, asigna y da seguimiento a los tickets del equipo en tiempo real con trazabilidad integral y métricas de desempeño.</p>
@@ -219,7 +219,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                         </div>
                     </div>
                     <div class="flex items-end gap-2">
-                        <h3 class="text-3xl font-black text-slate-800 leading-none"><?= $estadisticas['total'] ?></h3>
+                        <h3 id="kpiTotal" class="text-3xl font-black text-slate-800 leading-none"><?= $estadisticas['total'] ?></h3>
                     </div>
                     <p class="text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100">Volumen consolidado</p>
                 </div>
@@ -233,7 +233,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                         </div>
                     </div>
                     <div class="flex items-end gap-2">
-                        <h3 class="text-3xl font-black text-slate-800 leading-none"><?= $estadisticas['pendientes'] ?></h3>
+                        <h3 id="kpiPendientes" class="text-3xl font-black text-slate-800 leading-none"><?= $estadisticas['pendientes'] ?></h3>
                         <span class="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100 mb-0.5">! Urgentes</span>
                     </div>
                     <p class="text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100">Cola por asignar/atender</p>
@@ -248,7 +248,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                         </div>
                     </div>
                     <div class="flex items-end gap-2">
-                        <h3 class="text-3xl font-black text-slate-800 leading-none"><?= $estadisticas['en_proceso'] ?></h3>
+                        <h3 id="kpiEnProceso" class="text-3xl font-black text-slate-800 leading-none"><?= $estadisticas['en_proceso'] ?></h3>
                     </div>
                     <p class="text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100">En desarrollo activo</p>
                 </div>
@@ -262,7 +262,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                         </div>
                     </div>
                     <div class="flex items-end gap-2">
-                        <h3 class="text-3xl font-black text-slate-800 leading-none"><?= $estadisticas['terminados'] ?></h3>
+                        <h3 id="kpiTerminados" class="text-3xl font-black text-slate-800 leading-none"><?= $estadisticas['terminados'] ?></h3>
                     </div>
                     <p class="text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100">Resueltos exitosamente</p>
                 </div>
@@ -294,7 +294,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                 <?php if (empty($proyectosKpi)): ?>
                     <p class="text-xs text-slate-400 italic py-2">No hay proyectos registrados todavía.</p>
                 <?php else: ?>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div id="kpiProyectosGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <?php foreach ($proyectosKpi as $proy): ?>
                         <div class="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 hover:border-indigo-200 hover:bg-indigo-50/20 transition flex flex-col justify-between">
                             <div class="flex items-start justify-between gap-2 mb-2">
@@ -372,7 +372,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                                     $dotEstado = $estado === 'pendiente' ? 'bg-rose-500' : 
                                                  ($estado === 'en proceso' ? 'bg-amber-500' : 'bg-emerald-500');
                                 ?>
-                                <tr class="hover:bg-slate-50 transition group">
+                                <tr class="hover:bg-slate-50 transition group" data-ticket-id="<?= (int)$req['id_requerimiento'] ?>" data-estado="<?= htmlspecialchars($estado) ?>">
                                     <td class="p-4 pl-6 align-middle">
                                         <span class="font-mono text-xs font-bold text-indigo-600">#TK-<?= htmlspecialchars($req['id_requerimiento']) ?></span>
                                     </td>
@@ -434,8 +434,6 @@ if (!isset($requerimientos)) $requerimientos = [];
         </div>
     </main>
     <!-- SCRIPT -->
-    <script src="view/javascript/developer.js?v=<?= time() ?>"></script>
-</body>
-</html>
+    <script src="view/javascript/developer.js?v=<?= filemtime(__DIR__ . '/javascript/developer.js') ?>"></script>
 </body>
 </html>

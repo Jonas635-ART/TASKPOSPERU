@@ -385,4 +385,44 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tabCount) tabCount.textContent = visibles;
         });
     }
+
+    // ==========================================================
+    // 10. Sincronización automática en segundo plano (cada 15 s)
+    // ==========================================================
+    async function sincronizarKanban() {
+        if (document.visibilityState !== 'visible' || draggedCard || touchState) return;
+
+        try {
+            const res = await fetch('index.php?action=api_sync_estado', { cache: 'no-store' });
+            if (!res.ok) return;
+            const data = await res.json();
+            if (!data.success || !Array.isArray(data.tickets)) return;
+
+            let huboCambios = false;
+            data.tickets.forEach(t => {
+                const card = document.querySelector(`.kanban-card[data-id="${t.id_requerimiento}"]`);
+                if (!card) return;
+
+                const estadoActual = card.getAttribute('data-estado');
+                if (estadoActual && estadoActual !== t.estado) {
+                    const targetCol = document.querySelector(`.kanban-column[data-estado="${t.estado}"] .kanban-cards-container`);
+                    if (targetCol) {
+                        targetCol.appendChild(card);
+                        card.setAttribute('data-estado', t.estado);
+                        const select = card.querySelector('.kanban-move select');
+                        if (select) select.value = t.estado;
+                        huboCambios = true;
+                    }
+                }
+            });
+
+            if (huboCambios) {
+                actualizarContadores();
+            }
+        } catch (err) {
+            // Silencioso en segundo plano
+        }
+    }
+
+    setInterval(sincronizarKanban, 15000);
 });

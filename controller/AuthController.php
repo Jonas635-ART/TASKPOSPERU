@@ -48,10 +48,6 @@ class AuthController {
     }
 
     public function register() {
-        if (isset($_SESSION['usuario'])) {
-            header("Location: index.php?action=dashboard");
-            exit();
-        }
         require_once __DIR__ . '/../view/register.php';
     }
 

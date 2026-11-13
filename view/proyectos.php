@@ -180,19 +180,6 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
                 </a>
             <?php endif; ?>
             </div>
-            
-            <!-- Píldoras de filtro -->
-            <div class="flex flex-wrap gap-3">
-                <button class="px-3 py-1.5 border border-slate-300 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 transition">
-                    Encargado <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
-                <button class="px-3 py-1.5 border border-slate-300 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 transition">
-                    Miembros <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
-                <button class="px-3 py-1.5 border border-slate-300 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 transition">
-                    Estado <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
-            </div>
         </div>
 
         <!-- Tabla de Proyectos Scrollable alimentada con DATOS REALES -->
