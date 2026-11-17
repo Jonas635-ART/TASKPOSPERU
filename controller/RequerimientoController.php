@@ -209,8 +209,11 @@ class RequerimientoController {
 
     // Mostrar el formulario para crear un nuevo ticket
     public function nuevoTicket() {
-        $reqModel = new Requerimiento();
-        $tecnicos = $reqModel->listarTecnicos();
+        require_once __DIR__ . '/../model/Proyecto.php';
+        $reqModel  = new Requerimiento();
+        $proyModel = new Proyecto();
+        $tecnicos  = $reqModel->listarTecnicos();
+        $proyectos = $proyModel->listarProyectos();
         require_once __DIR__ . '/../view/nuevo_ticket.php';
     }
 

@@ -5,7 +5,8 @@ require_once __DIR__ . '/../config/conexion.php';
 class Usuario {
     private $pdo;
     private const MAX_INTENTOS_CODIGO = 5;
-    private const MINUTOS_VALIDEZ     = 30;
+    private const MINUTOS_VALIDEZ     = 15;
+    private const COOLDOWN_SEGUNDOS   = 60;
 
     public function __construct() {
         $db = new Database();
@@ -48,84 +49,57 @@ class Usuario {
     }
 
     // ==========================================================
-    // Recuperación de contraseña asistida por el Administrador
+    // Recuperación autónoma de contraseña por correo (código 6 dígitos)
     // ==========================================================
 
-    // 1. El usuario solicita restablecer su contraseña (solo con su correo)
-    public function crearSolicitudReset(string $correo): bool {
+    // 1. Genera un código de 6 dígitos (válido 15 min) para enviarlo al correo del usuario
+    public function generarCodigoRecuperacion(string $correo): array {
         try {
             $usuario = $this->obtenerPorCorreo($correo);
             if (!$usuario) {
-                // Devolvemos true igualmente para no revelar si el correo existe
-                return true;
+                return ['existe' => false];
             }
 
-            // Si ya tiene una solicitud abierta ('pendiente' o 'codigo_generado'), actualizamos la fecha
-            $stmt = $this->pdo->prepare("
-                SELECT id_reset FROM password_resets
-                WHERE id_usuario = :id AND estado IN ('pendiente', 'codigo_generado')
+            // Evitar spam: si ya se envió un código hace menos de 60 segundos
+            $stmtRecent = $this->pdo->prepare("
+                SELECT EXTRACT(EPOCH FROM (NOW() - fecha_solicitud)) AS segundos
+                FROM password_resets
+                WHERE id_usuario = :id AND estado = 'codigo_generado'
+                ORDER BY fecha_solicitud DESC
                 LIMIT 1
             ");
-            $stmt->execute([':id' => $usuario['id_usuario']]);
-            $existente = $stmt->fetchColumn();
-
-            if ($existente) {
-                $upd = $this->pdo->prepare("
-                    UPDATE password_resets
-                    SET fecha_solicitud = CURRENT_TIMESTAMP
-                    WHERE id_reset = :id_reset
-                ");
-                return $upd->execute([':id_reset' => $existente]);
+            $stmtRecent->execute([':id' => $usuario['id_usuario']]);
+            $segundos = $stmtRecent->fetchColumn();
+            if ($segundos !== false && (float)$segundos < self::COOLDOWN_SEGUNDOS) {
+                $espera = max(1, (int)ceil(self::COOLDOWN_SEGUNDOS - (float)$segundos));
+                return [
+                    'existe'   => true,
+                    'cooldown' => true,
+                    'espera'   => $espera,
+                ];
             }
 
-            $ins = $this->pdo->prepare("
-                INSERT INTO password_resets (id_usuario, estado)
-                VALUES (:id, 'pendiente')
-            ");
-            return $ins->execute([':id' => $usuario['id_usuario']]);
-        } catch (PDOException $e) {
-            error_log("Error en crearSolicitudReset: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    // 2. El Admin genera un código temporal de un solo uso (ej. POS-4829-K7) para un usuario
-    public function generarCodigoTemporalAdmin(int $id_usuario, int $id_admin): ?array {
-        try {
-            $stmtUser = $this->pdo->prepare("SELECT id_usuario, nombre, correo FROM usuarios WHERE id_usuario = :id LIMIT 1");
-            $stmtUser->execute([':id' => $id_usuario]);
-            $usuario = $stmtUser->fetch();
-            if (!$usuario) {
-                return null;
-            }
-
-            // Generar código legible: POS-XXXX-XX
-            $caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            $bloque1 = str_pad((string)random_int(0, 9999), 4, '0', STR_PAD_LEFT);
-            $bloque2 = $caracteres[random_int(0, strlen($caracteres) - 1)] . $caracteres[random_int(0, strlen($caracteres) - 1)];
-            $codigoPlano = "POS-{$bloque1}-{$bloque2}";
+            $codigoPlano = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $codigoHash  = password_hash($codigoPlano, PASSWORD_BCRYPT);
 
             $this->pdo->beginTransaction();
 
-            // Invalidar solicitudes previas abiertas de ese usuario
             $this->pdo->prepare("
                 DELETE FROM password_resets
                 WHERE id_usuario = :id AND estado IN ('pendiente', 'codigo_generado')
-            ")->execute([':id' => $id_usuario]);
+            ")->execute([':id' => $usuario['id_usuario']]);
 
-            // Crear el registro con el código activo por 30 minutos
-            $sql = "INSERT INTO password_resets (id_usuario, estado, codigo_hash, expira_en, intentos, id_admin)
-                    VALUES (:id_usr, 'codigo_generado', :hash, NOW() + INTERVAL '" . self::MINUTOS_VALIDEZ . " minutes', 0, :id_admin)";
+            $sql = "INSERT INTO password_resets (id_usuario, estado, codigo_hash, expira_en, intentos)
+                    VALUES (:id_usr, 'codigo_generado', :hash, NOW() + INTERVAL '" . self::MINUTOS_VALIDEZ . " minutes', 0)";
             $this->pdo->prepare($sql)->execute([
-                ':id_usr'   => $id_usuario,
-                ':hash'     => $codigoHash,
-                ':id_admin' => $id_admin,
+                ':id_usr' => $usuario['id_usuario'],
+                ':hash'   => $codigoHash,
             ]);
 
             $this->pdo->commit();
 
             return [
+                'existe'  => true,
                 'codigo'  => $codigoPlano,
                 'minutos' => self::MINUTOS_VALIDEZ,
                 'usuario' => $usuario,
@@ -134,17 +108,17 @@ class Usuario {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
-            error_log("Error en generarCodigoTemporalAdmin: " . $e->getMessage());
-            return null;
+            error_log("Error en generarCodigoRecuperacion: " . $e->getMessage());
+            return ['existe' => false, 'error' => true];
         }
     }
 
-    // 3. El usuario canjea el código temporal que le dio el Admin y define su nueva contraseña
-    public function restablecerConCodigoAdmin(string $correo, string $codigo, string $nuevaPassword): array {
+    // 2. Valida el código de 6 dígitos y actualiza la contraseña
+    public function restablecerConCodigo(string $correo, string $codigo, string $nuevaPassword): array {
         try {
             $usuario = $this->obtenerPorCorreo($correo);
             if (!$usuario) {
-                return ['success' => false, 'message' => 'Correo o código de autorización inválido o expirado.'];
+                return ['success' => false, 'message' => 'Correo o código de verificación inválido o expirado.'];
             }
 
             $stmt = $this->pdo->prepare("
@@ -159,20 +133,20 @@ class Usuario {
             $reset = $stmt->fetch();
 
             if (!$reset || empty($reset['codigo_hash'])) {
-                return ['success' => false, 'message' => 'No hay un código activo para esta cuenta. Solicita uno al Administrador.'];
+                return ['success' => false, 'message' => 'No hay un código activo para esta cuenta. Solicita uno nuevo.'];
             }
 
             if (empty($reset['vigente'])) {
                 $this->pdo->prepare("DELETE FROM password_resets WHERE id_reset = :id")->execute([':id' => $reset['id_reset']]);
-                return ['success' => false, 'message' => 'El código temporal ha expirado (validez de 30 min). Solicita uno nuevo al Administrador.'];
+                return ['success' => false, 'message' => 'El código ha expirado (validez de ' . self::MINUTOS_VALIDEZ . ' min). Solicita uno nuevo.'];
             }
 
-            $codigoNormalizado = strtoupper(trim($codigo));
+            $codigoNormalizado = preg_replace('/\s+/', '', trim($codigo));
             if (!password_verify($codigoNormalizado, $reset['codigo_hash'])) {
                 $intentos = ((int)$reset['intentos']) + 1;
                 if ($intentos >= self::MAX_INTENTOS_CODIGO) {
                     $this->pdo->prepare("DELETE FROM password_resets WHERE id_reset = :id")->execute([':id' => $reset['id_reset']]);
-                    return ['success' => false, 'message' => 'Demasiados intentos fallidos. El código fue anulado por seguridad; solicita otro al Administrador.'];
+                    return ['success' => false, 'message' => 'Demasiados intentos fallidos. El código fue anulado; solicita uno nuevo.'];
                 }
 
                 $this->pdo->prepare("UPDATE password_resets SET intentos = :i WHERE id_reset = :id")
@@ -181,7 +155,6 @@ class Usuario {
                 return ['success' => false, 'message' => "Código incorrecto ({$restantes} intentos restantes)."];
             }
 
-            // Código válido: actualizar contraseña y marcar solicitud como completada
             $this->pdo->beginTransaction();
 
             $nuevoHash = password_hash($nuevaPassword, PASSWORD_BCRYPT);
@@ -206,39 +179,8 @@ class Usuario {
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
-            error_log("Error en restablecerConCodigoAdmin: " . $e->getMessage());
+            error_log("Error en restablecerConCodigo: " . $e->getMessage());
             return ['success' => false, 'message' => 'Error interno al actualizar la contraseña.'];
         }
     }
-
-    // 4. Listar todos los usuarios junto con el estado de su solicitud de restablecimiento (para el panel del Admin)
-    public function listarUsuariosConEstadoReset(): array {
-        try {
-            $sql = "SELECT u.id_usuario, u.nombre, u.correo, u.rol,
-                           pr.id_reset, pr.estado AS estado_reset, pr.fecha_solicitud, pr.expira_en,
-                           (pr.expira_en IS NOT NULL AND pr.expira_en > NOW()) AS codigo_vigente
-                    FROM usuarios u
-                    LEFT JOIN LATERAL (
-                        SELECT id_reset, estado, fecha_solicitud, expira_en
-                        FROM password_resets p
-                        WHERE p.id_usuario = u.id_usuario
-                          AND p.estado IN ('pendiente', 'codigo_generado')
-                        ORDER BY p.fecha_solicitud DESC
-                        LIMIT 1
-                    ) pr ON TRUE
-                    ORDER BY
-                        CASE
-                            WHEN pr.estado = 'pendiente' THEN 0
-                            WHEN pr.estado = 'codigo_generado' THEN 1
-                            ELSE 2
-                        END,
-                        pr.fecha_solicitud DESC NULLS LAST,
-                        u.nombre ASC";
-            return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error en listarUsuariosConEstadoReset: " . $e->getMessage());
-            return [];
-        }
-    }
 }
-?>

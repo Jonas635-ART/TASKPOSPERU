@@ -3,6 +3,9 @@ if (!defined('APP_INIT')) { http_response_code(403); exit(); }
 $usuario = $_SESSION['usuario']; 
 if (!isset($estadisticas)) $estadisticas = ['total' => 0, 'pendientes' => 0, 'en_proceso' => 0, 'terminados' => 0];
 if (!isset($requerimientos)) $requerimientos = [];
+$rol = strtolower($usuario['rol']);
+$esAdmin = ($rol === 'admin');
+$labelRol = $esAdmin ? 'Admin' : 'Developer';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -10,6 +13,7 @@ if (!isset($requerimientos)) $requerimientos = [];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Desarrollo | PosPerú</title>
+    <link rel="icon" type="image/jpeg" href="view/img/logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="view/css/developer.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -22,9 +26,7 @@ if (!isset($requerimientos)) $requerimientos = [];
         <div class="h-16 flex items-center px-6 border-b border-slate-700/50 justify-between">
             <div class="flex items-center gap-3 w-full">
                 <!-- Modificado: Se agregó shrink-0 -->
-                <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-white shrink-0">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                </div>
+                <img src="view/img/logo.jpg" alt="PosPerú" class="w-8 h-8 rounded-lg object-cover shrink-0">
                 <span class="text-lg font-bold text-white tracking-wide truncate">PosPerú <span class="text-indigo-400 font-black text-sm">PRO</span></span>
             </div>
             
@@ -48,18 +50,12 @@ if (!isset($requerimientos)) $requerimientos = [];
                     </a>
                     <a href="index.php?action=kanban" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                        Kanban
+                        Tablero Kanban
                     </a>
-                    <a href="index.php?action=mis_asignaciones" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors">
+                    <a href="index.php?action=mis_asignaciones" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                         Mis asignaciones
                     </a>
-                    <?php if (strtolower($usuario['rol'] ?? '') === 'admin'): ?>
-                    <a href="index.php?action=usuarios_reset" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
-                        Accesos / Claves
-                    </a>
-                    <?php endif; ?>
                 </nav>
             </div>
         </div>
@@ -72,7 +68,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-white truncate"><?= htmlspecialchars(explode(' ', $usuario['nombre'])[0]) ?></p>
-                    <p class="text-[10px] text-slate-400 truncate"><?= htmlspecialchars($usuario['correo']) ?></p>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider truncate"><?= htmlspecialchars($labelRol) ?></p>
                 </div>
                 <!-- Modificado: Se agregó shrink-0 y un poco de padding (p-1) -->
                 <a href="index.php?action=logout" class="text-slate-400 hover:text-rose-400 transition shrink-0 p-1" title="Cerrar sesión">
@@ -91,14 +87,17 @@ if (!isset($requerimientos)) $requerimientos = [];
             <button id="btnAbrirMenu" class="lg:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 shrink-0 -ml-1">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>  
-             <div class="flex-1 max-w-2xl">
+             <div class="flex-1 min-w-0 max-w-2xl">
                 <div class="relative w-full">
-                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    <input type="text" id="searchInput" placeholder="Buscar tickets, tareas o proyectos (Ctrl + K)..." class="w-full pl-10 pr-4 py-2 bg-slate-100 border-transparent focus:bg-white border focus:border-indigo-500 rounded-lg text-sm outline-none transition">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input type="text" id="searchInput" placeholder="Buscar tickets o proyectos (Ctrl + K)..." class="w-full pl-9 pr-8 py-2 bg-slate-100 border-transparent focus:bg-white border focus:border-indigo-500 rounded-lg text-xs sm:text-sm outline-none transition">
+                    <button type="button" id="btnLimpiarSearchInput" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded" title="Limpiar búsqueda" aria-label="Limpiar búsqueda">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
                 </div>
             </div>
             
-            <div class="flex items-center gap-4 ml-6">
+            <div class="flex items-center gap-2 sm:gap-4 ml-2 sm:ml-6 shrink-0">
             <div class="hidden lg:flex items-center gap-3">
                 <!-- Indicador: En Proceso -->
                 <?php if (!empty($enProceso)): ?>
@@ -183,17 +182,11 @@ if (!isset($requerimientos)) $requerimientos = [];
         <!-- Area Scrollable -->
         <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
             <!-- Header Título -->
-            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
-                <div>
-                    <div class="flex items-center gap-3 mb-1">
-
-
-                    </div>
-                    <h1 class="text-2xl font-black text-slate-800">Gestión de Requerimientos y Tareas</h1>
-                    <p class="text-sm text-slate-500 mt-1 max-w-2xl">Supervisa, asigna y da seguimiento a los tickets del equipo en tiempo real con trazabilidad integral y métricas de desempeño.</p>
-                </div>
+            <div class="mb-6">
+                <h1 class="text-2xl font-black text-slate-800">Gestión de Requerimientos y Tareas</h1>
+                <p class="text-sm text-slate-500 mt-1 max-w-2xl">Supervisa, asigna y da seguimiento a los tickets del equipo en tiempo real con trazabilidad integral y métricas de desempeño.</p>
                 <?php if (strtolower($usuario['rol'] ?? '') === 'admin'): ?>
-                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <div class="flex flex-wrap items-center gap-2 mt-3">
                     <a href="index.php?action=exportar_excel" class="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         Excel: Tickets General
@@ -204,8 +197,6 @@ if (!isset($requerimientos)) $requerimientos = [];
                     </a>
                 </div>
                 <?php endif; ?>
-                <div>
-                </div>
             </div>
 
             <!-- Dashboard KPIs -->
@@ -271,23 +262,24 @@ if (!isset($requerimientos)) $requerimientos = [];
             <!-- KPI de Proyectos (Exclusivo Admin) -->
             <?php if (strtolower($usuario['rol'] ?? '') === 'admin'): ?>
             <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm mb-6">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded bg-violet-50 text-violet-600 flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+                    <div class="flex flex-wrap items-center gap-4">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded bg-violet-50 text-violet-600 flex items-center justify-center">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                            </div>
+                            <div>
+                                <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Tickets por Proyecto</h2>
+                                <p class="text-[11px] text-slate-400">Total de proyectos activos: <span class="font-bold text-slate-600"><?= count($proyectosKpi ?? []) ?></span></p>
+                            </div>
                         </div>
-                        <div>
-                            <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Tickets por Proyecto</h2>
-                            <p class="text-[11px] text-slate-400">Total de proyectos activos: <span class="font-bold text-slate-600"><?= count($proyectosKpi ?? []) ?></span></p>
-                        </div>
+                        <a href="index.php?action=proyectos" class="text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-1">
+                            Ver todos los proyectos &rarr;
+                        </a>
                     </div>
-                    <a href="index.php?action=proyectos" class="text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-1">
-                        Ver todos los proyectos &rarr;
-                    </a>
                     <a href="index.php?action=exportar_excel_proyectos" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         Exportar Excel por Proyectos
-                    </a><?php if (false): ?><a><?php endif; ?>
                     </a>
                 </div>
 
@@ -296,7 +288,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                 <?php else: ?>
                     <div id="kpiProyectosGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <?php foreach ($proyectosKpi as $proy): ?>
-                        <div class="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 hover:border-indigo-200 hover:bg-indigo-50/20 transition flex flex-col justify-between">
+                        <div class="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 hover:border-indigo-200 hover:bg-indigo-50/20 transition flex flex-col justify-between" data-proyecto-card data-proyecto-nombre="<?= htmlspecialchars(mb_strtolower($proy['nombre_proyecto'])) ?>">
                             <div class="flex items-start justify-between gap-2 mb-2">
                                 <p class="text-xs font-bold text-slate-700 line-clamp-1" title="<?= htmlspecialchars($proy['nombre_proyecto']) ?>">
                                     <?= htmlspecialchars($proy['nombre_proyecto']) ?>
@@ -372,7 +364,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                                     $dotEstado = $estado === 'pendiente' ? 'bg-rose-500' : 
                                                  ($estado === 'en proceso' ? 'bg-amber-500' : 'bg-emerald-500');
                                 ?>
-                                <tr class="hover:bg-slate-50 transition group" data-ticket-id="<?= (int)$req['id_requerimiento'] ?>" data-estado="<?= htmlspecialchars($estado) ?>">
+                                <tr class="hover:bg-slate-50 transition group" data-ticket-id="<?= (int)$req['id_requerimiento'] ?>" data-estado="<?= htmlspecialchars($estado) ?>" data-proyecto="<?= htmlspecialchars(mb_strtolower($req['proyecto'] ?? '')) ?>">
                                     <td class="p-4 pl-6 align-middle">
                                         <span class="font-mono text-xs font-bold text-indigo-600">#TK-<?= htmlspecialchars($req['id_requerimiento']) ?></span>
                                     </td>
@@ -426,6 +418,9 @@ if (!isset($requerimientos)) $requerimientos = [];
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
+                                <tr id="sinResultadosTabla" class="hidden">
+                                    <td colspan="6" class="p-8 text-center text-slate-400 text-sm">No se encontraron tickets que coincidan con tu búsqueda.</td>
+                                </tr>
                             <?php endif; ?>
                         </tbody>
                     </table>

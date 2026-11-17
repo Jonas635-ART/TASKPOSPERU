@@ -29,6 +29,7 @@ $filtros = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis asignaciones | PosPerú PRO</title>
+    <link rel="icon" type="image/jpeg" href="view/img/logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="view/css/developer.css">
 </head>

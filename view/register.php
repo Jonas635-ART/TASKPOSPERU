@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crear Cuenta | PosPerú Enterprise</title>
+    <link rel="icon" type="image/jpeg" href="view/img/logo.jpg">
     <!-- Reutilizamos los mismos estilos del login -->
     <link rel="stylesheet" href="view/css/login.css">
 </head>
@@ -17,9 +18,7 @@
             <div class="left-header">
                 <div class="brand">
                     <div class="logo-icon">
-                        <svg width="24" height="24" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                        </svg>
+                        <img src="view/img/logo.jpg" alt="PosPerú" style="width:100%;height:100%;object-fit:cover;">
                     </div>
                     <div class="brand-text">
                         <h2>PosPerú <span class="badge-pro">PRO</span></h2>

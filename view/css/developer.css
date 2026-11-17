@@ -7,15 +7,17 @@ body {
 
 /* Sidebar Corporativa PosPerú */
 .sidebar-bg {
-    background-color: #2b2b36; 
+    background-color: #2b2b36 !important;
 }
 .sidebar-item-active {
-    background-color: #6366f1; /* Indigo 500 */
-    color: white;
+    background-color: #6366f1 !important; /* Indigo 500 */
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
 }
 .sidebar-item:hover:not(.sidebar-item-active) {
-    background-color: #3f3f4e;
-    color: white;
+    background-color: #3f3f4e !important;
+    color: #ffffff !important;
 }
 
 /* Scrollbar personalizado para la tabla */

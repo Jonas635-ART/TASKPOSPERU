@@ -31,8 +31,6 @@ $rutas = [
     'recuperar'               => ['AuthController', 'recuperar',               'invitado'],
     'api_solicitar_reset'     => ['AuthController', 'solicitarRecuperacion',   'publico'],
     'api_recuperar'           => ['AuthController', 'procesarRecuperacion',    'publico'],
-    'usuarios_reset'          => ['AuthController', 'gestionAccesosAdmin',     SOLO_ADMIN],
-    'api_generar_codigo_reset'=> ['AuthController', 'generarCodigoAdmin',      SOLO_ADMIN],
 
     // Panel principal
     'dashboard'               => ['DashboardController', 'index',             'autenticado'],

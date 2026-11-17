@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recuperar Contraseña | PosPerú Enterprise</title>
+    <link rel="icon" type="image/jpeg" href="view/img/logo.jpg">
     <link rel="stylesheet" href="view/css/login.css">
     <style>
         .reset-tabs {
@@ -43,9 +44,7 @@
             <div class="left-header">
                 <div class="brand">
                     <div class="logo-icon">
-                        <svg width="24" height="24" fill="none" stroke="white" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                        </svg>
+                        <img src="view/img/logo.jpg" alt="PosPerú" style="width:100%;height:100%;object-fit:cover;">
                     </div>
                     <div class="brand-text">
                         <h2>PosPerú <span class="badge-pro">PRO</span></h2>
@@ -58,14 +57,14 @@
             </div>
 
             <div class="left-content">
-                <h1>Recuperación asistida por Soporte TI</h1>
-                <p>Solicita la reactivación de tu acceso y el Administrador del sistema generará un código temporal de un solo uso para que restablezcas tu contraseña.</p>
+                <h1>Recuperación autónoma por correo</h1>
+                <p>Ingresa tu correo registrado para recibir automáticamente un código de verificación de 6 dígitos válido por 15 minutos y restablecer tu contraseña al instante.</p>
             </div>
 
             <div class="left-footer">
                 <div style="display: flex; gap: 20px;">
-                    <span>✓ Autorización Corporativa</span>
-                    <span>✓ Código Temporal de 1 Uso</span>
+                    <span>✓ Envío Automático 24/7</span>
+                    <span>✓ Código de 6 Dígitos</span>
                 </div>
                 <div>v1.0.0-enterprise</div>
             </div>
@@ -75,18 +74,18 @@
         <div class="login-right">
             <div class="login-form-container">
                 <h2>Recuperar Contraseña</h2>
-                <p>Solicita un código temporal al Administrador o ingrésalo si ya te lo proporcionaron.</p>
+                <p>Te enviaremos un código de 6 dígitos a tu correo para validar tu identidad.</p>
 
                 <!-- Pestañas -->
                 <div class="reset-tabs" role="tablist">
-                    <button type="button" id="tabSolicitar" class="reset-tab active" role="tab" aria-selected="true">1. Solicitar código</button>
+                    <button type="button" id="tabSolicitar" class="reset-tab active" role="tab" aria-selected="true">1. Enviar código</button>
                     <button type="button" id="tabCanjear" class="reset-tab" role="tab" aria-selected="false">2. Ya tengo código</button>
                 </div>
 
                 <!-- Alerta dinámica de JS -->
                 <div id="mensaje-alerta" class="alert-error"></div>
 
-                <!-- FORMULARIO 1: Solicitar al Administrador -->
+                <!-- FORMULARIO 1: Enviar código por correo -->
                 <form id="formSolicitar">
                     <div class="form-group">
                         <div class="form-header">
@@ -101,11 +100,11 @@
                     </div>
 
                     <button type="submit" id="btnSolicitar" class="btn-submit">
-                        Enviar Solicitud al Admin <span>&rarr;</span>
+                        Enviar Código a mi Correo <span>&rarr;</span>
                     </button>
                 </form>
 
-                <!-- FORMULARIO 2: Canjear código temporal -->
+                <!-- FORMULARIO 2: Canjear código de 6 dígitos -->
                 <form id="formCanjear" style="display: none;">
                     <div class="form-group">
                         <div class="form-header">
@@ -121,13 +120,13 @@
 
                     <div class="form-group">
                         <div class="form-header">
-                            <label class="form-label" for="codigo_temporal" style="color: #4f46e5;">Código Temporal del Admin</label>
+                            <label class="form-label" for="codigo_temporal" style="color: #4f46e5;">Código de Verificación (6 dígitos)</label>
                         </div>
                         <div class="input-wrapper">
                             <svg fill="none" stroke="#4f46e5" viewBox="0 0 24 24" stroke-width="1.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
                             </svg>
-                            <input type="text" id="codigo_temporal" name="codigo_temporal" placeholder="Ej: POS-4829-K7" style="text-transform: uppercase; font-family: monospace; font-weight: 700;" required>
+                            <input type="text" id="codigo_temporal" name="codigo_temporal" inputmode="numeric" maxlength="6" placeholder="Ej: 482910" style="font-family: monospace; font-weight: 700; letter-spacing: 3px;" required>
                         </div>
                     </div>
 

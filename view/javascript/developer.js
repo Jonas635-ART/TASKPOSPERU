@@ -44,8 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
     /* --- FILTRADO DE TABLA Y ATAJOS DE TECLADO --- */
     const filterInput = document.getElementById('filterTable');
     const globalSearchInput = document.getElementById('searchInput');
+    const btnLimpiarSearch = document.getElementById('btnLimpiarSearchInput');
     const table = document.getElementById('ticketsTable');
     const rowCountDisplay = document.getElementById('rowCount');
+    const sinResultadosTabla = document.getElementById('sinResultadosTabla');
     const estadoSelect = filterInput
         ? filterInput.closest('.flex-wrap')?.querySelector('select')
         : null;
@@ -58,11 +60,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function aplicarFiltrosTabla(searchTerm) {
+        const term = (searchTerm !== undefined
+            ? searchTerm
+            : (globalSearchInput?.value || filterInput?.value || '')
+        ).toLowerCase().trim();
+
+        if (btnLimpiarSearch) {
+            btnLimpiarSearch.classList.toggle('hidden', term === '');
+        }
+
+        // Filtrar tarjetas de KPI de Proyectos si existen
+        document.querySelectorAll('[data-proyecto-card]').forEach(card => {
+            const nombreProy = (card.getAttribute('data-proyecto-nombre') || card.textContent).toLowerCase();
+            card.style.display = (!term || nombreProy.includes(term)) ? '' : 'none';
+        });
+
         if (!table) return;
         const tbody = table.querySelector('tbody');
         if (!tbody) return;
 
-        const term = (searchTerm ?? (filterInput?.value || globalSearchInput?.value || '')).toLowerCase().trim();
         let estadoFiltro = '';
         if (estadoSelect) {
             const val = estadoSelect.value.toLowerCase().trim();
@@ -71,16 +87,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const rows = tbody.querySelectorAll('tr');
+        const rows = tbody.querySelectorAll('tr[data-ticket-id]');
         let visibleCount = 0;
 
         rows.forEach(row => {
-            if (row.cells.length === 1) return;
-
             const textContent = row.textContent.toLowerCase();
             const rowEstado = (row.getAttribute('data-estado') || '').toLowerCase();
+            const rowProyecto = (row.getAttribute('data-proyecto') || '').toLowerCase();
 
-            const coincideTexto = !term || textContent.includes(term);
+            const coincideTexto = !term || textContent.includes(term) || rowProyecto.includes(term);
             const coincideEstado = !estadoFiltro || rowEstado === estadoFiltro;
 
             if (coincideTexto && coincideEstado) {
@@ -94,13 +109,37 @@ document.addEventListener('DOMContentLoaded', () => {
         if (rowCountDisplay) {
             rowCountDisplay.textContent = visibleCount;
         }
+        if (sinResultadosTabla) {
+            sinResultadosTabla.classList.toggle('hidden', visibleCount > 0 || rows.length === 0);
+        }
     }
 
     if (filterInput) {
-        filterInput.addEventListener('input', (e) => aplicarFiltrosTabla(e.target.value));
+        filterInput.addEventListener('input', (e) => {
+            if (globalSearchInput) globalSearchInput.value = e.target.value;
+            aplicarFiltrosTabla(e.target.value);
+        });
     }
     if (globalSearchInput) {
-        globalSearchInput.addEventListener('input', (e) => aplicarFiltrosTabla(e.target.value));
+        globalSearchInput.addEventListener('input', (e) => {
+            if (filterInput) filterInput.value = e.target.value;
+            aplicarFiltrosTabla(e.target.value);
+        });
+        globalSearchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                globalSearchInput.value = '';
+                if (filterInput) filterInput.value = '';
+                aplicarFiltrosTabla('');
+            }
+        });
+    }
+    if (btnLimpiarSearch && globalSearchInput) {
+        btnLimpiarSearch.addEventListener('click', () => {
+            globalSearchInput.value = '';
+            if (filterInput) filterInput.value = '';
+            aplicarFiltrosTabla('');
+            globalSearchInput.focus();
+        });
     }
     if (estadoSelect) {
         estadoSelect.addEventListener('change', () => aplicarFiltrosTabla());

@@ -38,28 +38,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const inputBuscar = document.querySelector('input[placeholder="Buscar un proyecto"]');
-    const filasProyectos = document.querySelectorAll('tbody tr');
+    const inputBuscar = document.getElementById('buscarProyecto');
+    const btnLimpiar = document.getElementById('btnLimpiarBusquedaProyecto');
+    const contadorProyectos = document.getElementById('contadorProyectos');
+    const sinResultados = document.getElementById('sinResultadosProyectos');
+    const filasProyectos = document.querySelectorAll('.proyecto-fila');
+    const cardsProyectos = document.querySelectorAll('.proyecto-card');
+
+    function filtrarProyectos() {
+        if (!inputBuscar) return;
+        const busqueda = inputBuscar.value.toLowerCase().trim();
+        let visibles = 0;
+
+        filasProyectos.forEach(fila => {
+            const texto = (fila.getAttribute('data-search') || fila.textContent).toLowerCase();
+            const coincide = !busqueda || texto.includes(busqueda);
+            fila.style.display = coincide ? '' : 'none';
+            if (coincide) visibles++;
+        });
+
+        cardsProyectos.forEach(card => {
+            const texto = (card.getAttribute('data-search') || card.textContent).toLowerCase();
+            card.style.display = (!busqueda || texto.includes(busqueda)) ? '' : 'none';
+        });
+
+        if (contadorProyectos) contadorProyectos.textContent = visibles;
+        if (btnLimpiar) btnLimpiar.classList.toggle('hidden', busqueda === '');
+        if (sinResultados) sinResultados.classList.toggle('hidden', visibles > 0 || filasProyectos.length === 0);
+    }
 
     if (inputBuscar) {
-        inputBuscar.addEventListener('keyup', (e) => {
-            const busqueda = e.target.value.toLowerCase().trim();
-
-            filasProyectos.forEach(fila => {
-                // Obtener el nombre del proyecto en la primera celda
-                const nombreProyecto = fila.querySelector('td:first-child p.font-bold');
-                
-                if (nombreProyecto) {
-                    const texto = nombreProyecto.textContent.toLowerCase();
-                    if (texto.includes(busqueda)) {
-                        fila.style.display = '';
-                    } else {
-                        fila.style.display = 'none';
-                    }
-                }
-            });
+        inputBuscar.addEventListener('input', filtrarProyectos);
+        inputBuscar.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                inputBuscar.value = '';
+                filtrarProyectos();
+            }
         });
     }
+
+    if (btnLimpiar && inputBuscar) {
+        btnLimpiar.addEventListener('click', () => {
+            inputBuscar.value = '';
+            filtrarProyectos();
+            inputBuscar.focus();
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && inputBuscar) {
+            e.preventDefault();
+            inputBuscar.focus();
+        }
+    });
 });
 
 // Funciones del Modal de Proyectos

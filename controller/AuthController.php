@@ -1,6 +1,7 @@
 <?php
 if (!defined('APP_INIT')) { http_response_code(403); exit(); }
 require_once __DIR__ . '/../model/Usuario.php';
+require_once __DIR__ . '/../config/Mailer.php';
 
 class AuthController {
     
@@ -86,8 +87,7 @@ class AuthController {
 
             // Validar código fijo desde el archivo .env
             if (!empty($codigoAcceso)) {
-                $envFile = __DIR__ . '/../.env';
-                $env = parse_ini_file($envFile);
+                $env = Database::getEnv();
 
                 if (!empty($env['TOKEN_ADMIN']) && hash_equals($env['TOKEN_ADMIN'], $codigoAcceso)) {
                     $rolAsignado = 'admin';
@@ -116,15 +116,14 @@ class AuthController {
     }
 
     // ==========================================================
-    // Recuperación de contraseña asistida por el Administrador
+    // Recuperación autónoma de contraseña por correo (código 6 dígitos)
     // ==========================================================
 
-    // Vista pública de recuperación (Solicitar código / Canjear código)
     public function recuperar() {
         require_once __DIR__ . '/../view/recuperar.php';
     }
 
-    // AJAX (POST): El usuario envía una solicitud de restablecimiento al Admin
+    // AJAX (POST): Genera código de 6 dígitos y lo envía al correo del usuario
     public function solicitarRecuperacion() {
         header('Content-Type: application/json');
 
@@ -141,16 +140,43 @@ class AuthController {
         }
 
         $usuarioModel = new Usuario();
-        $usuarioModel->crearSolicitudReset($correo);
+        $res = $usuarioModel->generarCodigoRecuperacion($correo);
+
+        if (!empty($res['error'])) {
+            echo json_encode(['success' => false, 'message' => 'Ocurrió un error interno. Intenta nuevamente.']);
+            exit();
+        }
+
+        if (!empty($res['cooldown'])) {
+            echo json_encode([
+                'success' => false,
+                'message' => "Ya enviamos un código recientemente. Espera {$res['espera']} segundos antes de solicitar otro."
+            ]);
+            exit();
+        }
+
+        if (!empty($res['existe'])) {
+            $envio = Mailer::enviarCodigoRecuperacion(
+                $res['usuario']['correo'],
+                $res['usuario']['nombre'],
+                $res['codigo'],
+                $res['minutos']
+            );
+
+            if (!$envio['success']) {
+                echo json_encode(['success' => false, 'message' => $envio['error']]);
+                exit();
+            }
+        }
 
         echo json_encode([
             'success' => true,
-            'message' => 'Solicitud registrada. Pídele al Administrador tu código temporal para continuar en la pestaña «Ya tengo código».'
+            'message' => 'Si el correo está registrado, enviamos un código de 6 dígitos a tu bandeja de entrada (válido por 15 minutos).'
         ]);
         exit();
     }
 
-    // AJAX (POST): El usuario canjea el código temporal que le entregó el Admin
+    // AJAX (POST): Verifica el código de 6 dígitos y actualiza la contraseña
     public function procesarRecuperacion() {
         header('Content-Type: application/json');
 
@@ -181,7 +207,7 @@ class AuthController {
         }
 
         $usuarioModel = new Usuario();
-        $resultado = $usuarioModel->restablecerConCodigoAdmin($correo, $codigo, $password);
+        $resultado = $usuarioModel->restablecerConCodigo($correo, $codigo, $password);
 
         if ($resultado['success']) {
             $resultado['redirect'] = 'index.php?action=login';
@@ -190,57 +216,4 @@ class AuthController {
         echo json_encode($resultado);
         exit();
     }
-
-    // Vista de administración de accesos y generación de códigos temporales (Solo Admin)
-    public function gestionAccesosAdmin() {
-        require_once __DIR__ . '/../model/Requerimiento.php';
-        $reqModel = new Requerimiento();
-        $notificaciones = $reqModel->obtenerNotificacionesTecnicos();
-
-        $usuarioModel = new Usuario();
-        $usuarios = $usuarioModel->listarUsuariosConEstadoReset();
-
-        require_once __DIR__ . '/../view/usuarios_reset.php';
-    }
-
-    // AJAX (POST, Solo Admin): Genera un código temporal para el usuario indicado
-    public function generarCodigoAdmin() {
-        header('Content-Type: application/json');
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
-            exit();
-        }
-
-        $id_usuario = (int)($_POST['id_usuario'] ?? 0);
-        $id_admin   = (int)($_SESSION['usuario']['id'] ?? 0);
-
-        if ($id_usuario <= 0 || $id_admin <= 0) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Usuario inválido.']);
-            exit();
-        }
-
-        $usuarioModel = new Usuario();
-        $resultado = $usuarioModel->generarCodigoTemporalAdmin($id_usuario, $id_admin);
-
-        if (!$resultado) {
-            http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'No se pudo generar el código para este usuario.']);
-            exit();
-        }
-
-        echo json_encode([
-            'success' => true,
-            'codigo'  => $resultado['codigo'],
-            'minutos' => $resultado['minutos'],
-            'usuario' => [
-                'nombre' => $resultado['usuario']['nombre'],
-                'correo' => $resultado['usuario']['correo'],
-            ],
-        ]);
-        exit();
-    }
 }
-?>

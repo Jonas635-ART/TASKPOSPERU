@@ -11,6 +11,7 @@ if (!isset($requerimientos)) $requerimientos = [];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal del Cliente | PosPerú PRO</title>
+    <link rel="icon" type="image/jpeg" href="view/img/logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="view/css/cliente.css">
 </head>
@@ -21,11 +22,7 @@ if (!isset($requerimientos)) $requerimientos = [];
     <nav class="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center sticky top-0 z-50">
         <div class="flex items-center gap-6">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                    </svg>
-                </div>
+                <img src="view/img/logo.jpg" alt="PosPerú" class="w-8 h-8 rounded-lg object-cover shrink-0 shadow-sm">
                 <span class="font-bold text-lg text-slate-900 tracking-tight">PosPerú <span class="text-indigo-600 text-sm font-black">PRO</span></span>
                 <span class="ml-2 text-xs font-semibold text-slate-500 uppercase tracking-wider border-l border-slate-300 pl-3">Portal del Cliente</span>
             </div>

@@ -30,6 +30,34 @@ if ($archivos_encontrados) {
 $estadoSeguro = strtolower($ticket['estado'] ?? 'pendiente');
 $bgEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-100 text-rose-700' : (($estadoSeguro === 'en proceso') ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700');
 $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estadoSeguro === 'en proceso') ? 'bg-blue-500' : 'bg-emerald-500');
+
+// Recordar la página de origen real (Kanban, Proyectos, Mis asignaciones o Dashboard)
+// incluso si el usuario recarga la vista al comentar o cambiar subtareas.
+$idTicketActual = (int)$ticket['id_requerimiento'];
+$referer = $_SERVER['HTTP_REFERER'] ?? '';
+if ($referer !== '') {
+    $partes = parse_url($referer);
+    $hostActual = $_SERVER['HTTP_HOST'] ?? '';
+    $mismoHost = empty($partes['host']) || ($hostActual !== '' && strcasecmp($partes['host'], $hostActual) === 0);
+    if ($mismoHost && !empty($partes['query'])) {
+        parse_str($partes['query'], $paramsRef);
+        $accionRef = $paramsRef['action'] ?? '';
+        if ($accionRef !== '' && $accionRef !== 'ver_ticket') {
+            $_SESSION['ticket_origen'][$idTicketActual] = 'index.php?' . $partes['query'];
+        }
+    }
+}
+
+$urlVolver = $_SESSION['ticket_origen'][$idTicketActual] ?? 'index.php?action=dashboard';
+parse_str((string)parse_url($urlVolver, PHP_URL_QUERY), $paramsVolver);
+$accionVolver = $paramsVolver['action'] ?? 'dashboard';
+$etiquetasVolver = [
+    'kanban'           => 'Volver al Kanban',
+    'proyectos'        => 'Volver a Proyectos',
+    'mis_asignaciones' => 'Volver a Mis asignaciones',
+    'dashboard'        => 'Volver al Tablero',
+];
+$textoVolver = $etiquetasVolver[$accionVolver] ?? 'Volver';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -37,6 +65,7 @@ $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estad
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket #TK-<?= htmlspecialchars($ticket['id_requerimiento']) ?> | PosPerú</title>
+    <link rel="icon" type="image/jpeg" href="view/img/logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="view/css/ticket.css">
 </head>
@@ -46,10 +75,11 @@ $dotEstadoPrincipal = ($estadoSeguro === 'pendiente') ? 'bg-rose-500' : (($estad
     <main class="flex-1 flex flex-col h-full overflow-hidden">
         
         <header class="h-14 border-b border-slate-200 flex items-center justify-between px-6 shrink-0 bg-white">
-            <div class="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                <a href="index.php?action=dashboard" class="text-indigo-600 hover:underline flex items-center gap-1">
+            <div class="flex items-center gap-3 text-sm text-slate-500 font-medium">
+                <img src="view/img/logo.jpg" alt="PosPerú" class="w-7 h-7 rounded-md object-cover shrink-0">
+                <a href="<?= htmlspecialchars($urlVolver) ?>" class="text-indigo-600 hover:underline flex items-center gap-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Volver al Tablero
+                    <?= htmlspecialchars($textoVolver) ?>
                 </a>
                 <span>/</span> <span>Ticket</span> <span>/</span> <span class="text-slate-800">TK-<?= htmlspecialchars($ticket['id_requerimiento']) ?></span>
             </div>
