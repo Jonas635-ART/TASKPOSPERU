@@ -24,6 +24,142 @@ class Usuario {
         }
     }
 
+    public function obtenerPorId(int $id) {
+        try {
+            $stmt = $this->pdo->prepare("SELECT id_usuario, nombre, correo, password, rol FROM usuarios WHERE id_usuario = :id LIMIT 1");
+            $stmt->execute([':id' => $id]);
+            return $stmt->fetch();
+        } catch (PDOException $e) {
+            error_log("Error en obtenerPorId: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // ==========================================================
+    // Gestión de cuenta propia (correo, contraseña y eliminación)
+    // ==========================================================
+
+    public function actualizarCorreo(int $idUsuario, string $nuevoCorreo, string $passwordActual): array {
+        try {
+            $usuario = $this->obtenerPorId($idUsuario);
+            if (!$usuario) {
+                return ['success' => false, 'message' => 'Usuario no encontrado.'];
+            }
+
+            if (!password_verify($passwordActual, $usuario['password'])) {
+                return ['success' => false, 'message' => 'La contraseña actual es incorrecta.'];
+            }
+
+            if (strcasecmp($usuario['correo'], $nuevoCorreo) === 0) {
+                return ['success' => false, 'message' => 'El nuevo correo es igual al actual.'];
+            }
+
+            $existente = $this->obtenerPorCorreo($nuevoCorreo);
+            if ($existente && (int)$existente['id_usuario'] !== $idUsuario) {
+                return ['success' => false, 'message' => 'Ese correo electrónico ya está registrado en otra cuenta.'];
+            }
+
+            $stmt = $this->pdo->prepare("UPDATE usuarios SET correo = :correo WHERE id_usuario = :id");
+            $stmt->execute([':correo' => $nuevoCorreo, ':id' => $idUsuario]);
+
+            return [
+                'success' => true,
+                'message' => 'Correo electrónico actualizado correctamente.',
+                'correo'  => $nuevoCorreo,
+            ];
+        } catch (PDOException $e) {
+            error_log("Error en actualizarCorreo: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error interno al actualizar el correo.'];
+        }
+    }
+
+    public function actualizarPassword(int $idUsuario, string $passwordActual, string $nuevaPassword): array {
+        try {
+            $usuario = $this->obtenerPorId($idUsuario);
+            if (!$usuario) {
+                return ['success' => false, 'message' => 'Usuario no encontrado.'];
+            }
+
+            if (!password_verify($passwordActual, $usuario['password'])) {
+                return ['success' => false, 'message' => 'La contraseña actual es incorrecta.'];
+            }
+
+            $nuevoHash = password_hash($nuevaPassword, PASSWORD_BCRYPT);
+            $stmt = $this->pdo->prepare("UPDATE usuarios SET password = :pwd WHERE id_usuario = :id");
+            $stmt->execute([':pwd' => $nuevoHash, ':id' => $idUsuario]);
+
+            return [
+                'success' => true,
+                'message' => 'Contraseña actualizada correctamente.',
+            ];
+        } catch (PDOException $e) {
+            error_log("Error en actualizarPassword: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error interno al actualizar la contraseña.'];
+        }
+    }
+
+    public function eliminarCuenta(int $idUsuario, string $passwordActual): array {
+        try {
+            $usuario = $this->obtenerPorId($idUsuario);
+            if (!$usuario) {
+                return ['success' => false, 'message' => 'Usuario no encontrado.'];
+            }
+
+            if (!password_verify($passwordActual, $usuario['password'])) {
+                return ['success' => false, 'message' => 'La contraseña actual es incorrecta.'];
+            }
+
+            $this->pdo->beginTransaction();
+
+            // 1. Obtener todos los requerimientos creados por este usuario
+            $stmtReqs = $this->pdo->prepare("SELECT id_requerimiento FROM requerimientos WHERE id_solicitante = :id");
+            $stmtReqs->execute([':id' => $idUsuario]);
+            $ticketIds = $stmtReqs->fetchAll(PDO::FETCH_COLUMN);
+
+            if (!empty($ticketIds)) {
+                $placeholders = implode(',', array_fill(0, count($ticketIds), '?'));
+
+                // Eliminar dependencias de los tickets del usuario
+                $this->pdo->prepare("DELETE FROM subtareas_responsables WHERE id_subtarea IN (SELECT id_subtarea FROM subtareas WHERE id_requerimiento IN ($placeholders))")
+                          ->execute($ticketIds);
+                $this->pdo->prepare("DELETE FROM subtareas WHERE id_requerimiento IN ($placeholders)")
+                          ->execute($ticketIds);
+                $this->pdo->prepare("DELETE FROM comentarios WHERE id_requerimiento IN ($placeholders)")
+                          ->execute($ticketIds);
+                $this->pdo->prepare("DELETE FROM requerimientos_responsables WHERE id_requerimiento IN ($placeholders)")
+                          ->execute($ticketIds);
+                $this->pdo->prepare("DELETE FROM requerimientos WHERE id_requerimiento IN ($placeholders)")
+                          ->execute($ticketIds);
+            }
+
+            // 2. Eliminar comentarios que el usuario haya dejado en otros tickets
+            $this->pdo->prepare("DELETE FROM comentarios WHERE id_usuario = :id")
+                      ->execute([':id' => $idUsuario]);
+
+            // 3. Desvincular si fuese líder de algún proyecto
+            $this->pdo->prepare("UPDATE proyectos SET id_lider = NULL WHERE id_lider = :id")
+                      ->execute([':id' => $idUsuario]);
+
+            // 4. Eliminar el usuario (las tablas con ON DELETE CASCADE / SET NULL se limpian automáticamente)
+            $this->pdo->prepare("DELETE FROM usuarios WHERE id_usuario = :id")
+                      ->execute([':id' => $idUsuario]);
+
+            $this->pdo->commit();
+
+            return [
+                'success'            => true,
+                'message'            => 'Tu cuenta ha sido eliminada correctamente.',
+                'tickets_eliminados' => array_map('intval', $ticketIds),
+            ];
+        } catch (PDOException $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            error_log("Error en eliminarCuenta: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error interno al intentar eliminar la cuenta.'];
+        }
+    }
+
     public function registrar($nombre, $correo, $password, $rol = 'cliente') {
         try {
             if ($this->obtenerPorCorreo($correo)) {

@@ -36,6 +36,11 @@ $rutas = [
     'dashboard'               => ['DashboardController', 'index',             'autenticado'],
     'api_sync_estado'         => ['DashboardController', 'syncEstado',        'autenticado'],
 
+    // Gestión de cuenta propia (perfil)
+    'api_actualizar_correo'   => ['AuthController', 'actualizarCorreo',       'autenticado'],
+    'api_actualizar_password' => ['AuthController', 'actualizarPassword',     'autenticado'],
+    'api_eliminar_cuenta'     => ['AuthController', 'eliminarCuenta',         'autenticado'],
+
     // Tickets (la propiedad del ticket se valida dentro del controlador)
     'ver_ticket'              => ['RequerimientoController', 'verDetalle',         'autenticado'],
     'ver_evidencia'           => ['RequerimientoController', 'verEvidencia',       'autenticado'],

@@ -216,4 +216,143 @@ class AuthController {
         echo json_encode($resultado);
         exit();
     }
+
+    // ==========================================================
+    // Gestión de cuenta propia (perfil del usuario autenticado)
+    // ==========================================================
+
+    // AJAX (POST): Actualizar correo electrónico propio
+    public function actualizarCorreo() {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
+            exit();
+        }
+
+        $idUsuario      = (int)$_SESSION['usuario']['id'];
+        $nuevoCorreo    = trim($_POST['nuevo_correo'] ?? '');
+        $passwordActual = $_POST['password_actual'] ?? '';
+
+        if (empty($nuevoCorreo) || empty($passwordActual)) {
+            echo json_encode(['success' => false, 'message' => 'Completa el nuevo correo y tu contraseña actual.']);
+            exit();
+        }
+
+        if (!filter_var($nuevoCorreo, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['success' => false, 'message' => 'Ingresa un correo electrónico válido.']);
+            exit();
+        }
+
+        $usuarioModel = new Usuario();
+        $resultado = $usuarioModel->actualizarCorreo($idUsuario, $nuevoCorreo, $passwordActual);
+
+        if ($resultado['success']) {
+            $_SESSION['usuario']['correo'] = $resultado['correo'];
+        }
+
+        echo json_encode($resultado);
+        exit();
+    }
+
+    // AJAX (POST): Cambiar contraseña propia
+    public function actualizarPassword() {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
+            exit();
+        }
+
+        $idUsuario       = (int)$_SESSION['usuario']['id'];
+        $passwordActual  = $_POST['password_actual'] ?? '';
+        $nuevaPassword   = $_POST['nueva_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (empty($passwordActual) || empty($nuevaPassword) || empty($confirmPassword)) {
+            echo json_encode(['success' => false, 'message' => 'Completa todos los campos de contraseña.']);
+            exit();
+        }
+
+        if (strlen($nuevaPassword) < 6) {
+            echo json_encode(['success' => false, 'message' => 'La nueva contraseña debe tener al menos 6 caracteres.']);
+            exit();
+        }
+
+        if ($nuevaPassword !== $confirmPassword) {
+            echo json_encode(['success' => false, 'message' => 'La confirmación de contraseña no coincide.']);
+            exit();
+        }
+
+        $usuarioModel = new Usuario();
+        $resultado = $usuarioModel->actualizarPassword($idUsuario, $passwordActual, $nuevaPassword);
+
+        echo json_encode($resultado);
+        exit();
+    }
+
+    // AJAX (POST): Eliminar cuenta propia definitivamente
+    public function eliminarCuenta() {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
+            exit();
+        }
+
+        $idUsuario      = (int)$_SESSION['usuario']['id'];
+        $passwordActual = $_POST['password_actual'] ?? '';
+
+        if (empty($passwordActual)) {
+            echo json_encode(['success' => false, 'message' => 'Ingresa tu contraseña actual para confirmar la eliminación.']);
+            exit();
+        }
+
+        $usuarioModel = new Usuario();
+        $resultado = $usuarioModel->eliminarCuenta($idUsuario, $passwordActual);
+
+        if ($resultado['success']) {
+            // Eliminar archivos de evidencia asociados a los tickets borrados
+            $dirUploads = __DIR__ . '/../uploads/';
+            foreach ($resultado['tickets_eliminados'] ?? [] as $idReq) {
+                $archivos = glob($dirUploads . "tk_{$idReq}_*.*");
+                if ($archivos) {
+                    foreach ($archivos as $archivo) {
+                        if (is_file($archivo)) {
+                            @unlink($archivo);
+                        }
+                    }
+                }
+            }
+
+            // Cerrar sesión de forma segura
+            session_unset();
+            session_destroy();
+            if (ini_get('session.use_cookies')) {
+                $params = session_get_cookie_params();
+                setcookie(
+                    session_name(),
+                    '',
+                    time() - 42000,
+                    $params['path'],
+                    $params['domain'],
+                    $params['secure'],
+                    $params['httponly']
+                );
+            }
+
+            echo json_encode([
+                'success'  => true,
+                'message'  => $resultado['message'],
+                'redirect' => 'index.php?action=login',
+            ]);
+            exit();
+        }
+
+        echo json_encode($resultado);
+        exit();
+    }
 }
