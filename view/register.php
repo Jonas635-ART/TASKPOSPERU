@@ -22,24 +22,17 @@
                     </div>
                     <div class="brand-text">
                         <h2>PosPerú <span class="badge-pro">PRO</span></h2>
-                        <p>Enterprise IT Ops Suite</p>
+
                     </div>
-                </div>
-                <div class="status-badge">
-                    <div class="status-dot"></div> Sistemas 100% Operativos
                 </div>
             </div>
 
             <div class="left-content">
                 <h1>Únete a la plataforma centralizada de TI</h1>
-                <p>Gestiona tickets de soporte, da seguimiento a tus requerimientos en tiempo real y colabora con el equipo de infraestructura.</p>
+                <p>Gestiona tickets de soporte, da seguimiento a tus requerimientos y colabora con tu equipo en tiempo real.</p>
             </div>
 
             <div class="left-footer">
-                <div style="display: flex; gap: 20px;">
-                    <span>✓ Certificación ISO/IEC 27001</span>
-                    <span>✓ PostgreSQL 16 Seguro</span>
-                </div>
                 <div>v1.0.0-enterprise</div>
             </div>
         </div>
@@ -76,7 +69,7 @@
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"></path>
                             </svg>
-                            <input type="email" id="correo" name="correo" placeholder="nombre@posperu.com" required>
+                            <input type="email" id="correo" name="correo" placeholder="nombre@gamil.com" required>
                         </div>
                     </div>
 
