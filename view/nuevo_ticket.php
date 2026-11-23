@@ -69,16 +69,16 @@ $labelRol = $esAdmin ? 'Admin' : $usuario['correo'];
         </div>
 
         <div class="p-4 border-t border-slate-700/50">
-            <div class="flex items-center gap-3 bg-slate-800/50 p-2.5 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-800 transition">
-                <!-- Modificado: Se agregó shrink-0 para evitar que el avatar se deforme -->
-                <div class="w-9 h-9 rounded bg-indigo-900/50 text-indigo-300 flex items-center justify-center font-bold text-sm border border-indigo-500/30 uppercase shrink-0">
-                    <?= substr(htmlspecialchars($usuario['nombre']), 0, 2) ?>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-white truncate"><?= htmlspecialchars(explode(' ', $usuario['nombre'])[0]) ?></p>
-                    <p class="text-[10px] text-slate-400 truncate"><?= htmlspecialchars($usuario['correo']) ?></p>
-                </div>
-                <!-- Modificado: Se agregó shrink-0 y un poco de padding (p-1) -->
+            <div class="flex items-center gap-2 bg-slate-800/50 p-2 rounded-lg border border-slate-700">
+                <button type="button" data-open-cuenta class="flex items-center gap-3 flex-1 min-w-0 text-left rounded-md p-0.5 hover:bg-slate-700/50 transition" title="Mi Cuenta">
+                    <div class="w-9 h-9 rounded bg-indigo-900/50 text-indigo-300 flex items-center justify-center font-bold text-sm border border-indigo-500/30 uppercase shrink-0">
+                        <?= substr(htmlspecialchars($usuario['nombre']), 0, 2) ?>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-white truncate"><?= htmlspecialchars(explode(' ', $usuario['nombre'])[0]) ?></p>
+                        <p data-cuenta-correo class="text-[10px] text-slate-400 truncate"><?= htmlspecialchars($usuario['correo']) ?></p>
+                    </div>
+                </button>
                 <a href="index.php?action=logout" class="text-slate-400 hover:text-rose-400 transition shrink-0 p-1" title="Cerrar sesión">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 </a>
@@ -249,5 +249,6 @@ $labelRol = $esAdmin ? 'Admin' : $usuario['correo'];
                     if (btnCerrar) btnCerrar.addEventListener('click', toggleMenu);
                     if (overlay) overlay.addEventListener('click', toggleMenu)});
     </script>
+    <?php include __DIR__ . '/partials/modal_mi_cuenta.php'; ?>
 </body>
 </html>

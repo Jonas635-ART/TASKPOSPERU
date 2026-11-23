@@ -166,6 +166,7 @@ $filtros = [
         </div>
     </main>
 
+    <?php include __DIR__ . '/partials/modal_mi_cuenta.php'; ?>
     <script src="view/javascript/mis_asignaciones.js?v=<?= filemtime(__DIR__ . '/javascript/mis_asignaciones.js') ?>"></script>
 </body>
 </html>
