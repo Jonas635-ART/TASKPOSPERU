@@ -100,18 +100,14 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
             <div class="flex items-center gap-2 sm:gap-4 ml-2 sm:ml-6 shrink-0">
             <div class="hidden lg:flex items-center gap-3">
                 <!-- Indicador: En Proceso -->
-                <?php if (!empty($enProceso)): ?>
-                <span class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-orange-50 text-orange-600 border border-orange-100 text-xs font-semibold">
-                    <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> <?= $enProceso ?> En Proceso
+                <span id="badgeEnProceso" class="<?= empty($enProceso) ? 'hidden ' : '' ?>flex items-center gap-1.5 px-2.5 py-1 rounded bg-orange-50 text-orange-600 border border-orange-100 text-xs font-semibold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> <span id="badgeEnProcesoCount"><?= (int)$enProceso ?></span> En Proceso
                 </span>
-                <?php endif; ?>
 
                 <!-- Indicador: Críticos -->
-                <?php if (!empty($criticos)): ?>
-                <span class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-rose-50 text-rose-600 border border-rose-100 text-xs font-semibold">
-                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> <?= $criticos ?> Críticos
+                <span id="badgeCriticos" class="<?= empty($criticos) ? 'hidden ' : '' ?>flex items-center gap-1.5 px-2.5 py-1 rounded bg-rose-50 text-rose-600 border border-rose-100 text-xs font-semibold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> <span id="badgeCriticosCount"><?= (int)$criticos ?></span> Críticos
                 </span>
-                <?php endif; ?>
             </div>
             
             <div class="h-6 w-px bg-slate-200 mx-2"></div>
@@ -354,7 +350,7 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-sm">
                             <?php if(empty($requerimientos)): ?>
-                                <tr><td colspan="6" class="p-8 text-center text-slate-500">No hay tickets registrados en el sistema.</td></tr>
+                                <tr id="filaVaciaTabla"><td colspan="6" class="p-8 text-center text-slate-500">No hay tickets registrados en el sistema.</td></tr>
                             <?php else: ?>
                                 <?php foreach($requerimientos as $req): 
                                     $estado = strtolower($req['estado']);
@@ -418,10 +414,10 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
-                                <tr id="sinResultadosTabla" class="hidden">
-                                    <td colspan="6" class="p-8 text-center text-slate-400 text-sm">No se encontraron tickets que coincidan con tu búsqueda.</td>
-                                </tr>
                             <?php endif; ?>
+                            <tr id="sinResultadosTabla" class="hidden">
+                                <td colspan="6" class="p-8 text-center text-slate-400 text-sm">No se encontraron tickets que coincidan con tu búsqueda.</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>

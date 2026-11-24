@@ -146,10 +146,105 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* --- SINCRONIZACIÓN AUTOMÁTICA EN SEGUNDO PLANO (POLLING LIGERO) --- */
+    let syncEnCurso = false;
+
     function escapeHtml(str) {
         const div = document.createElement('div');
         div.textContent = str ?? '';
         return div.innerHTML;
+    }
+
+    function renderEstadoBadge(estado) {
+        const est = (estado || 'pendiente').toLowerCase();
+        const bgEstado = est === 'pendiente'
+            ? 'bg-rose-50 text-rose-700 border-rose-100'
+            : (est === 'en proceso'
+                ? 'bg-amber-50 text-amber-700 border-amber-100'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-100');
+        const dotEstado = est === 'pendiente'
+            ? 'bg-rose-500'
+            : (est === 'en proceso' ? 'bg-amber-500' : 'bg-emerald-500');
+        const label = est.charAt(0).toUpperCase() + est.slice(1);
+        return `
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${bgEstado} border text-[11px] font-semibold">
+                <span class="w-1.5 h-1.5 rounded-full ${dotEstado}"></span> ${escapeHtml(label)}
+            </span>
+        `;
+    }
+
+    function renderResponsableHtml(responsable) {
+        if (responsable) {
+            const iniciales = escapeHtml(String(responsable).slice(0, 2));
+            return `
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-cyan-50 text-cyan-700 flex items-center justify-center text-[9px] font-bold uppercase border border-cyan-100">
+                        ${iniciales}
+                    </div>
+                    <div>
+                        <p class="font-semibold text-slate-700 text-xs">${escapeHtml(responsable)}</p>
+                        <p class="text-[10px] text-slate-400">DevOps / Dev</p>
+                    </div>
+                </div>
+            `;
+        }
+        return '<span class="text-xs text-slate-400 italic">Sin asignar</span>';
+    }
+
+    function crearFilaTicket(t) {
+        const id = Number(t.id_requerimiento);
+        const estado = (t.estado || 'pendiente').toLowerCase();
+        const proyecto = (t.proyecto || '').toLowerCase();
+        const responsable = t.responsable || '';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition-colors duration-700 group bg-indigo-50/70';
+        tr.setAttribute('data-ticket-id', String(id));
+        tr.setAttribute('data-estado', estado);
+        tr.setAttribute('data-proyecto', proyecto);
+        tr.setAttribute('data-responsable', responsable);
+
+        tr.innerHTML = `
+            <td class="p-4 pl-6 align-middle">
+                <span class="font-mono text-xs font-bold text-indigo-600">#TK-${id}</span>
+            </td>
+            <td class="p-4 align-middle max-w-sm">
+                <p class="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">${escapeHtml(t.titulo)}</p>
+                <p class="text-[11px] text-slate-500 truncate mt-0.5" title="${escapeHtml(t.descripcion_tecnica)}">
+                    ${escapeHtml(t.descripcion_tecnica)}
+                </p>
+            </td>
+            <td class="p-4 align-middle">
+                <p class="font-semibold text-slate-700 text-xs">${escapeHtml(t.solicitante)}</p>
+                <p class="text-[10px] text-slate-400 capitalize">${escapeHtml(t.rol_solicitante || 'cliente')}</p>
+            </td>
+            <td class="p-4 align-middle">
+                ${renderResponsableHtml(t.responsable)}
+            </td>
+            <td class="p-4 align-middle">
+                ${renderEstadoBadge(estado)}
+            </td>
+            <td class="p-4 align-middle text-center">
+                <div class="flex justify-center gap-2">
+                    <a href="index.php?action=ver_ticket&id=${id}"
+                        class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition inline-flex items-center justify-center"
+                        title="Ver Detalles">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                    </a>
+                    <a href="index.php?action=eliminar_ticket&id=${id}"
+                        onclick="confirmarEliminacion(event, this.href, '${id}')"
+                        class="text-slate-400 hover:text-rose-600 transition p-1 cursor-pointer"
+                        title="Eliminar definitivamente">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </a>
+                </div>
+            </td>
+        `;
+
+        setTimeout(() => tr.classList.remove('bg-indigo-50/70'), 3500);
+        return tr;
     }
 
     function actualizarCampanaNotificaciones(notificaciones, esCliente) {
@@ -207,7 +302,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function sincronizarDashboard() {
-        if (document.visibilityState !== 'visible') return;
+        if (document.visibilityState !== 'visible' || syncEnCurso) return;
+        syncEnCurso = true;
 
         try {
             const res = await fetch('index.php?action=api_sync_estado', { cache: 'no-store' });
@@ -220,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 actualizarCampanaNotificaciones(data.notificaciones, !!data.es_cliente);
             }
 
-            // 2. Actualizar KPIs principales
+            // 2. Actualizar KPIs principales e indicadores de barra superior
             if (data.estadisticas) {
                 const elTotal = document.getElementById('kpiTotal');
                 const elPend  = document.getElementById('kpiPendientes');
@@ -231,6 +327,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (elPend)  elPend.textContent  = data.estadisticas.pendientes;
                 if (elProc)  elProc.textContent  = data.estadisticas.en_proceso;
                 if (elTerm)  elTerm.textContent  = data.estadisticas.terminados;
+
+                const badgeProc = document.getElementById('badgeEnProceso');
+                const badgeProcCount = document.getElementById('badgeEnProcesoCount');
+                const enProcNum = Number(data.estadisticas.en_proceso) || 0;
+                if (badgeProc && badgeProcCount) {
+                    badgeProcCount.textContent = enProcNum;
+                    badgeProc.classList.toggle('hidden', enProcNum === 0);
+                }
+
+                const badgeCrit = document.getElementById('badgeCriticos');
+                const badgeCritCount = document.getElementById('badgeCriticosCount');
+                const critNum = Number(data.estadisticas.criticos) || 0;
+                if (badgeCrit && badgeCritCount) {
+                    badgeCritCount.textContent = critNum;
+                    badgeCrit.classList.toggle('hidden', critNum === 0);
+                }
             }
 
             // 3. Actualizar KPI de Proyectos (Admin)
@@ -241,8 +353,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const pend  = Number(p.pendientes) || 0;
                     const proc  = Number(p.en_proceso) || 0;
                     const term  = Number(p.terminados) || 0;
+                    const nombreLower = escapeHtml((p.nombre_proyecto || '').toLowerCase());
                     return `
-                        <div class="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 hover:border-indigo-200 hover:bg-indigo-50/20 transition flex flex-col justify-between">
+                        <div class="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 hover:border-indigo-200 hover:bg-indigo-50/20 transition flex flex-col justify-between" data-proyecto-card data-proyecto-nombre="${nombreLower}">
                             <div class="flex items-start justify-between gap-2 mb-2">
                                 <p class="text-xs font-bold text-slate-700 line-clamp-1" title="${escapeHtml(p.nombre_proyecto)}">
                                     ${escapeHtml(p.nombre_proyecto)}
@@ -267,41 +380,104 @@ document.addEventListener('DOMContentLoaded', () => {
                 }).join('');
             }
 
-            // 4. Sincronizar estado de las filas de la tabla en vivo
+            // 4. Sincronizar filas de la tabla en vivo (nuevos, modificados y eliminados)
             if (table && Array.isArray(data.tickets)) {
-                data.tickets.forEach(t => {
-                    const row = table.querySelector(`tr[data-ticket-id="${t.id_requerimiento}"]`);
-                    if (!row) return;
-                    const estadoActual = row.getAttribute('data-estado');
-                    if (estadoActual !== t.estado) {
-                        row.setAttribute('data-estado', t.estado);
-                        const estadoCell = row.cells[4];
-                        if (estadoCell) {
-                            const bgEstado = t.estado === 'pendiente'
-                                ? 'bg-rose-50 text-rose-700 border-rose-100'
-                                : (t.estado === 'en proceso'
-                                    ? 'bg-amber-50 text-amber-700 border-amber-100'
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-100');
-                            const dotEstado = t.estado === 'pendiente'
-                                ? 'bg-rose-500'
-                                : (t.estado === 'en proceso' ? 'bg-amber-500' : 'bg-emerald-500');
-                            const label = t.estado.charAt(0).toUpperCase() + t.estado.slice(1);
-                            estadoCell.innerHTML = `
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${bgEstado} border text-[11px] font-semibold">
-                                    <span class="w-1.5 h-1.5 rounded-full ${dotEstado}"></span> ${escapeHtml(label)}
-                                </span>
-                            `;
+                const tbody = table.querySelector('tbody');
+                if (tbody) {
+                    const idsRecibidos = new Set(data.tickets.map(t => String(t.id_requerimiento)));
+
+                    // Quitar filas de tickets eliminados
+                    tbody.querySelectorAll('tr[data-ticket-id]').forEach(row => {
+                        if (!idsRecibidos.has(row.getAttribute('data-ticket-id'))) {
+                            row.remove();
+                        }
+                    });
+
+                    // Quitar fila vacía si ahora existen tickets
+                    const filaVacia = document.getElementById('filaVaciaTabla');
+                    if (data.tickets.length > 0 && filaVacia) {
+                        filaVacia.remove();
+                    } else if (data.tickets.length === 0 && !filaVacia) {
+                        const trVacia = document.createElement('tr');
+                        trVacia.id = 'filaVaciaTabla';
+                        trVacia.innerHTML = '<td colspan="6" class="p-8 text-center text-slate-500">No hay tickets registrados en el sistema.</td>';
+                        tbody.insertBefore(trVacia, sinResultadosTabla || null);
+                    }
+
+                    // Insertar nuevos (recorriendo de atrás hacia adelante para mantener los más nuevos arriba) y actualizar existentes
+                    const nuevosTickets = [];
+                    for (let i = data.tickets.length - 1; i >= 0; i--) {
+                        const t = data.tickets[i];
+                        const idStr = String(t.id_requerimiento);
+                        const row = tbody.querySelector(`tr[data-ticket-id="${idStr}"]`);
+
+                        if (!row) {
+                            const nuevaFila = crearFilaTicket(t);
+                            tbody.insertBefore(nuevaFila, tbody.firstElementChild);
+                            nuevosTickets.push(t);
+                            continue;
+                        }
+
+                        // Actualizar estado si cambió
+                        const estadoActual = row.getAttribute('data-estado');
+                        if (estadoActual !== t.estado) {
+                            row.setAttribute('data-estado', t.estado);
+                            if (row.cells[4]) {
+                                row.cells[4].innerHTML = renderEstadoBadge(t.estado);
+                            }
+                        }
+
+                        // Actualizar responsable si cambió
+                        const respNuevo = t.responsable || '';
+                        const respActual = row.getAttribute('data-responsable');
+                        if (respActual === null || respActual !== respNuevo) {
+                            row.setAttribute('data-responsable', respNuevo);
+                            if (row.cells[3]) {
+                                row.cells[3].innerHTML = renderResponsableHtml(t.responsable);
+                            }
+                        }
+
+                        // Actualizar proyecto si cambió
+                        const proyNuevo = (t.proyecto || '').toLowerCase();
+                        if ((row.getAttribute('data-proyecto') || '') !== proyNuevo) {
+                            row.setAttribute('data-proyecto', proyNuevo);
                         }
                     }
-                });
-                aplicarFiltrosTabla();
+
+                    // Notificar de forma sutil si llegaron nuevos requerimientos
+                    if (nuevosTickets.length > 0 && typeof Swal !== 'undefined') {
+                        const ultimo = nuevosTickets[nuevosTickets.length - 1];
+                        const tituloToast = nuevosTickets.length === 1
+                            ? `Nuevo ticket #TK-${ultimo.id_requerimiento}`
+                            : `${nuevosTickets.length} nuevos requerimientos recibidos`;
+                        const textoToast = nuevosTickets.length === 1 ? ultimo.titulo : '';
+                        Swal.fire({
+                            toast: true,
+                            position: 'bottom-end',
+                            icon: 'info',
+                            title: tituloToast,
+                            text: textoToast,
+                            showConfirmButton: false,
+                            timer: 4500,
+                            timerProgressBar: true
+                        });
+                    }
+
+                    aplicarFiltrosTabla();
+                }
             }
         } catch (err) {
             // Silencioso en segundo plano para no interrumpir al usuario
+        } finally {
+            syncEnCurso = false;
         }
     }
 
-    setInterval(sincronizarDashboard, 15000);
+    setInterval(sincronizarDashboard, 4000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') sincronizarDashboard();
+    });
+    window.addEventListener('focus', sincronizarDashboard);
 });
 
 /* --- FUNCIÓN DE ELIMINACIÓN --- */

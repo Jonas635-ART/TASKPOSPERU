@@ -81,9 +81,14 @@ class DashboardController {
                 }
                 $mapaTickets[] = [
                     'id_requerimiento'      => (int)$t['id_requerimiento'],
+                    'titulo'                => $t['titulo'] ?? '',
+                    'descripcion_tecnica'   => $t['descripcion_tecnica'] ?? '',
                     'estado'                => $est,
                     'prioridad'             => $prio,
+                    'solicitante'           => $t['solicitante'] ?? '',
+                    'rol_solicitante'       => $t['rol_solicitante'] ?? 'cliente',
                     'responsable'           => $t['responsable'] ?? null,
+                    'proyecto'              => $t['proyecto'] ?? '',
                     'total_subtareas'       => (int)($t['total_subtareas'] ?? 0),
                     'subtareas_completadas' => (int)($t['subtareas_completadas'] ?? 0),
                 ];

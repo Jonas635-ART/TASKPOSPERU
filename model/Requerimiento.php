@@ -239,7 +239,7 @@ class Requerimiento {
     public function listarParaKanban() {
         try {
             $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado, r.fecha_creacion,
-                           u1.nombre AS solicitante,
+                           u1.nombre AS solicitante, u1.rol AS rol_solicitante,
                            u2.nombre AS responsable,
                            p.nombre_proyecto AS proyecto,
                            (SELECT COUNT(*) FROM subtareas s WHERE s.id_requerimiento = r.id_requerimiento) AS total_subtareas,
@@ -346,7 +346,7 @@ class Requerimiento {
         try {
             $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado,
                            r.fecha_creacion, r.fecha_actualizacion,
-                           u1.nombre AS solicitante,
+                           u1.nombre AS solicitante, u1.rol AS rol_solicitante,
                            p.nombre_proyecto AS proyecto,
                            (SELECT COUNT(*) FROM subtareas s WHERE s.id_requerimiento = r.id_requerimiento) AS total_subtareas,
                            (SELECT COUNT(*) FROM subtareas s WHERE s.id_requerimiento = r.id_requerimiento AND s.estado = 'terminado') AS subtareas_completadas
