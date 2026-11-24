@@ -1,0 +1,45 @@
+{
+	frankenphp
+	order php_server before file_server
+}
+
+:{$PORT} {
+	root * .
+
+	# 1. Desactivar listado de directorios (equivalente a Options -Indexes)
+	file_server {
+		browse off
+	}
+
+	# 2. Bloquear archivos ocultos (.env, .git, .htaccess) y archivos de proyecto
+	@archivos_sensibles {
+		path_regexp (^|/)\.
+		path /composer.json /composer.lock /Caddyfile *.sql *.md *.log *.ini *.bak
+	}
+	respond @archivos_sensibles 403
+
+	# 3. Bloquear acceso directo total a carpetas internas y a uploads/
+	# (Las evidencias solo se sirven mediante index.php?action=ver_evidencia)
+	@carpetas_privadas {
+		path /config/* /controller/* /model/* /uploads/* /vendor/*
+		path /view/*.php /view/partials/*
+	}
+	respond @carpetas_privadas 403
+
+	# 4. Bloquear cualquier otro archivo .php que no sea index.php
+	@otros_php {
+		path *.php
+		not path /index.php
+	}
+	respond @otros_php 403
+
+	# 5. Cabeceras de seguridad HTTP (las mismas de tu .htaccess)
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	php_server
+}
