@@ -22,7 +22,8 @@ class Database {
             $keys = [
                 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS',
                 'TOKEN_DEV', 'TOKEN_ADMIN',
-                'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'SMTP_FROM_NAME'
+                'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'SMTP_FROM_NAME',
+                'BREVO_API_KEY'
             ];
 
             foreach ($keys as $key) {

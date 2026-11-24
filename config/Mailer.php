@@ -7,28 +7,73 @@ class Mailer {
     /**
      * Envía el código de 6 dígitos para restablecer la contraseña mediante SMTP (Gmail / STARTTLS o SSL).
      */
-    public static function enviarCodigoRecuperacion(string $destinatario, string $nombre, string $codigo, int $minutos = 15): array {
+        public static function enviarCodigoRecuperacion(string $destinatario, string $nombre, string $codigo, int $minutos = 15): array {
         $env      = Database::getEnv();
-        $host     = trim((string)($env['SMTP_HOST'] ?? ''));
-        $port     = (int)($env['SMTP_PORT'] ?? 587);
-        $user     = trim((string)($env['SMTP_USER'] ?? ''));
-        $pass     = str_replace(' ', '', trim((string)($env['SMTP_PASS'] ?? '')));
-        $from     = trim((string)($env['SMTP_FROM'] ?? $user));
-        $fromName = trim((string)($env['SMTP_FROM_NAME'] ?? 'Soporte TASKPOSPERU'));
+        $from     = trim((string)($env['SMTP_FROM'] ?? $env['SMTP_USER'] ?? ''));
+        $fromName = trim((string)($env['SMTP_FROM_NAME'] ?? 'PosPerú PRO'));
+        $asunto   = 'Código de recuperación de contraseña - PosPerú';
+        $html     = self::construirPlantillaCodigo($nombre, $codigo, $minutos);
+
+        // 1. Envío HTTPS vía Brevo API (Railway)
+        $brevoKey = trim((string)($env['BREVO_API_KEY'] ?? ''));
+        if ($brevoKey !== '' && $from !== '') {
+            return self::enviarViaBrevoApi($brevoKey, $from, $fromName, $destinatario, $nombre, $asunto, $html);
+        }
+
+        // 2. Respaldo SMTP (XAMPP local)
+        $host = trim((string)($env['SMTP_HOST'] ?? ''));
+        $port = (int)($env['SMTP_PORT'] ?? 587);
+        $user = trim((string)($env['SMTP_USER'] ?? ''));
+        $pass = str_replace(' ', '', trim((string)($env['SMTP_PASS'] ?? '')));
 
         if ($host === '' || $user === '' || $pass === '') {
             error_log('Mailer: Faltan variables SMTP en .env');
             return ['success' => false, 'error' => 'El servicio de correo SMTP no está configurado en el servidor.'];
         }
 
-        if ($from === '') {
-            $from = $user;
+        return self::enviarSmtp($host, $port, $user, $pass, $from !== '' ? $from : $user, $fromName, $destinatario, $nombre, $asunto, $html);
+    }
+
+    private static function enviarViaBrevoApi(
+        string $apiKey,
+        string $from,
+        string $fromName,
+        string $to,
+        string $toName,
+        string $subject,
+        string $htmlBody
+    ): array {
+        $payload = json_encode([
+            'sender'      => ['name' => $fromName, 'email' => $from],
+            'to'          => [['email' => $to, 'name' => $toName !== '' ? $toName : $to]],
+            'subject'     => $subject,
+            'htmlContent' => $htmlBody,
+        ], JSON_UNESCAPED_UNICODE);
+
+        $endpoint = implode('', ['https://', 'api.', 'brevo.com', '/v3/smtp/email']);
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_HTTPHEADER     => [
+                'accept: application/json',
+                'api-key: ' . $apiKey,
+                'content-type: application/json',
+            ],
+            CURLOPT_POSTFIELDS     => $payload,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($response === false || $httpCode < 200 || $httpCode >= 300) {
+            error_log("Mailer Brevo API error ({$httpCode}): {$response}");
+            return ['success' => false, 'error' => 'No se pudo enviar el correo de recuperación.'];
         }
 
-        $asunto = 'Código de recuperación de contraseña - PosPerú';
-        $html   = self::construirPlantillaCodigo($nombre, $codigo, $minutos);
-
-        return self::enviarSmtp($host, $port, $user, $pass, $from, $fromName, $destinatario, $nombre, $asunto, $html);
+        return ['success' => true, 'error' => ''];
     }
 
     private static function construirPlantillaCodigo(string $nombre, string $codigo, int $minutos): string {
