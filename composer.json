@@ -1,5 +1,11 @@
 {
     "require": {
+        "php": "^8.2",
+        "ext-pdo_pgsql": "*",
+        "ext-pgsql": "*",
+        "ext-fileinfo": "*",
+        "ext-zip": "*",
+        "ext-gd": "*",
         "phpoffice/phpspreadsheet": "^2.1"
     }
 }

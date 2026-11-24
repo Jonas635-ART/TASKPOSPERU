@@ -10,11 +10,35 @@ class Database {
     public static function getEnv(): array {
         if (self::$envCache === null) {
             $envFile = __DIR__ . '/../.env';
-            if (!file_exists($envFile)) {
-                die("Error: Archivo de configuración .env no encontrado.");
+            $parsed  = [];
+
+            //  .env (entorno local XAMPP)
+            if (file_exists($envFile)) {
+                $ini    = parse_ini_file($envFile);
+                $parsed = is_array($ini) ? $ini : [];
             }
-            $parsed = parse_ini_file($envFile);
-            self::$envCache = is_array($parsed) ? $parsed : [];
+
+            //  archivo .env -> variables de entorno de Railway
+            $keys = [
+                'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS',
+                'TOKEN_DEV', 'TOKEN_ADMIN',
+                'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'SMTP_FROM_NAME'
+            ];
+
+            foreach ($keys as $key) {
+                if (!isset($parsed[$key]) || $parsed[$key] === '') {
+                    $val = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
+                    if ($val !== false && $val !== null && $val !== '') {
+                        $parsed[$key] = $val;
+                    }
+                }
+            }
+
+            if (empty($parsed['DB_HOST']) || empty($parsed['DB_NAME'])) {
+                die("Error: Configuración de entorno no encontrada.");
+            }
+
+            self::$envCache = $parsed;
         }
         return self::$envCache;
     }
@@ -28,7 +52,7 @@ class Database {
         $env = self::getEnv();
 
         try {
-            $dsn = "pgsql:host=" . $env['DB_HOST'] . ";port=" . $env['DB_PORT'] . ";dbname=" . $env['DB_NAME'];
+            $dsn = "pgsql:host=" . $env['DB_HOST'] . ";port=" . ($env['DB_PORT'] ?? '5432') . ";dbname=" . $env['DB_NAME'];
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
