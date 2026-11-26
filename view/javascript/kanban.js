@@ -456,13 +456,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const estadoCard = (t.estado || 'pendiente').toLowerCase();
         const totalSub = Number(t.total_subtareas) || 0;
         const compSub = Number(t.subtareas_completadas) || 0;
+        const fechaEntrega = t.fecha_entrega || '';
 
-        const subtareasHtml = totalSub > 0 ? `
-            <div class="mb-3">
+        let fechaEntregaHtml = '';
+        if (fechaEntrega) {
+            const hoy = new Date().toISOString().slice(0, 10);
+            const vencido = estadoCard !== 'terminado' && fechaEntrega < hoy;
+            const venceHoy = estadoCard !== 'terminado' && fechaEntrega === hoy;
+            const clsFecha = vencido
+                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                : (venceHoy ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-100');
+            const [y, m, d] = fechaEntrega.split('-');
+            fechaEntregaHtml = `
+                <span class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md ${clsFecha}">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    ${escapeHtml(`${d}/${m}/${y}`)}
+                </span>`;
+        }
+
+        const subtareasHtml = (totalSub > 0 || fechaEntregaHtml) ? `
+            <div class="mb-3 flex flex-wrap items-center gap-1.5">
+                ${totalSub > 0 ? `
                 <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
                     <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                     ${compSub} / ${totalSub} Subtareas
-                </span>
+                </span>` : ''}
+                ${fechaEntregaHtml}
             </div>` : '';
 
         const responsableHtml = t.responsable ? `

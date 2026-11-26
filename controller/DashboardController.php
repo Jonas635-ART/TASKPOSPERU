@@ -89,6 +89,7 @@ class DashboardController {
                     'rol_solicitante'       => $t['rol_solicitante'] ?? 'cliente',
                     'responsable'           => $t['responsable'] ?? null,
                     'proyecto'              => $t['proyecto'] ?? '',
+                    'fecha_entrega'         => $t['fecha_entrega'] ?? null,
                     'total_subtareas'       => (int)($t['total_subtareas'] ?? 0),
                     'subtareas_completadas' => (int)($t['subtareas_completadas'] ?? 0),
                 ];

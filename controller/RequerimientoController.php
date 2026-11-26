@@ -40,6 +40,19 @@ class RequerimientoController {
         return in_array($valor, Requerimiento::PRIORIDADES, true) ? $valor : $porDefecto;
     }
 
+    // Valida fecha de entrega (YYYY-MM-DD). Devuelve null si está vacía, la fecha si es válida o false si es inválida.
+    private function normalizarFechaEntrega($valor) {
+        $valor = trim((string)$valor);
+        if ($valor === '') {
+            return null;
+        }
+        $dt = DateTime::createFromFormat('Y-m-d', $valor);
+        if (!$dt || $dt->format('Y-m-d') !== $valor) {
+            return false;
+        }
+        return $valor;
+    }
+
     // Respuesta JSON de error con código HTTP
     private function errorJson(int $codigo, string $mensaje): void {
         http_response_code($codigo);
@@ -81,6 +94,12 @@ class RequerimientoController {
             $titulo              = trim($_POST['titulo'] ?? '');
             $prioridad           = trim($_POST['prioridad'] ?? '');
             $descripcion_tecnica = trim($_POST['descripcion_tecnica'] ?? '');
+            $fecha_entrega       = $this->normalizarFechaEntrega($_POST['fecha_entrega'] ?? '');
+
+            if ($fecha_entrega === false) {
+                echo json_encode(['success' => false, 'message' => 'La fecha de entrega no tiene un formato válido.']);
+                exit();
+            }
 
             if (empty($titulo) || empty($prioridad) || empty($descripcion_tecnica)) {
                 echo json_encode(['success' => false, 'message' => 'Completa todos los campos obligatorios (*).']);
@@ -89,7 +108,7 @@ class RequerimientoController {
 
             $prioridad = $this->normalizarPrioridad($prioridad);
             $reqModel  = new Requerimiento();
-            $id_req    = $reqModel->registrar($id_proyecto, $titulo, $descripcion_tecnica, $prioridad, $id_solicitante);
+            $id_req    = $reqModel->registrar($id_proyecto, $titulo, $descripcion_tecnica, $prioridad, $id_solicitante, $fecha_entrega);
 
             if ($id_req) {
                 $this->guardarEvidencias($id_req);
@@ -175,13 +194,17 @@ class RequerimientoController {
             $titulo         = $_POST['titulo'] ?? '';
             $descripcion    = $_POST['descripcion_tecnica'] ?? '';
             $prioridad      = $this->normalizarPrioridad($_POST['prioridad'] ?? 'media');
+            $fecha_entrega  = $this->normalizarFechaEntrega($_POST['fecha_entrega'] ?? '');
+            if ($fecha_entrega === false) {
+                $fecha_entrega = null;
+            }
             $id_responsable = !empty($_POST['id_responsable']) ? (int)$_POST['id_responsable'] : null;
             $subtareas      = $_POST['subtareas'] ?? [];
             $subtareas_resp = $_POST['subtareas_responsable'] ?? [];
             $id_solicitante = $_SESSION['usuario']['id'];
 
             if (!empty(trim($titulo)) && !empty(trim($descripcion))) {
-                $id_req = $reqModel->registrar($id_proyecto, $titulo, $descripcion, $prioridad, $id_solicitante);
+                $id_req = $reqModel->registrar($id_proyecto, $titulo, $descripcion, $prioridad, $id_solicitante, $fecha_entrega);
 
                 if ($id_req) {
                     if ($id_responsable) {
@@ -293,8 +316,17 @@ class RequerimientoController {
             }
         }
 
+        $actualizarFechaEntrega = array_key_exists('fecha_entrega', $_POST);
+        $fechaEntregaFinal = null;
+        if ($actualizarFechaEntrega) {
+            $fechaEntregaFinal = $this->normalizarFechaEntrega($_POST['fecha_entrega']);
+            if ($fechaEntregaFinal === false) {
+                $this->errorJson(422, 'Fecha de entrega no válida.');
+            }
+        }
+
         $reqModel = new Requerimiento();
-        $res = $reqModel->actualizarEstadoTicket($id_req, $estado, $prioridadFinal);
+        $res = $reqModel->actualizarEstadoTicket($id_req, $estado, $prioridadFinal, $fechaEntregaFinal, $actualizarFechaEntrega);
         echo json_encode(['success' => $res]);
         exit();
     }
@@ -391,7 +423,8 @@ class RequerimientoController {
             'E1' => 'Estado',
             'F1' => 'Solicitante',
             'G1' => 'Responsable Asignado',
-            'H1' => 'Fecha de Creación'
+            'H1' => 'Fecha de Creación',
+            'I1' => 'Fecha de Entrega'
         ];
         foreach ($cabeceras as $celda => $texto) {
             $sheet->setCellValue($celda, $texto);
@@ -402,6 +435,7 @@ class RequerimientoController {
         $fila = 2;
         foreach ($requerimientos as $req) {
             $fecha = isset($req['fecha_creacion']) ? date('d/m/Y H:i', strtotime($req['fecha_creacion'])) : 'N/A';
+            $fechaEntrega = !empty($req['fecha_entrega']) ? date('d/m/Y', strtotime($req['fecha_entrega'])) : 'Sin definir';
             $sheet->setCellValue('A' . $fila, '#TK-' . $req['id_requerimiento']);
             $sheet->setCellValue('B' . $fila, empty($req['proyecto']) ? 'Sin Proyecto' : $req['proyecto']);
             $sheet->setCellValue('C' . $fila, $req['titulo']);
@@ -410,10 +444,11 @@ class RequerimientoController {
             $sheet->setCellValue('F' . $fila, $req['solicitante']);
             $sheet->setCellValue('G' . $fila, empty($req['responsable']) ? 'Sin Asignar' : $req['responsable']);
             $sheet->setCellValue('H' . $fila, $fecha);
+            $sheet->setCellValue('I' . $fila, $fechaEntrega);
             $fila++;
         }
 
-        foreach (range('A', 'H') as $columnID) {
+        foreach (range('A', 'I') as $columnID) {
             $sheet->getColumnDimension($columnID)->setAutoSize(true);
         }
 
@@ -558,7 +593,8 @@ class RequerimientoController {
             'E1' => 'Estado',
             'F1' => 'Responsable Asignado',
             'G1' => 'Solicitante',
-            'H1' => 'Fecha de Creación'
+            'H1' => 'Fecha de Creación',
+            'I1' => 'Fecha de Entrega'
         ];
         foreach ($cabDetalle as $celda => $texto) {
             $sheetDetalle->setCellValue($celda, $texto);
@@ -576,6 +612,7 @@ class RequerimientoController {
         $filaD = 2;
         foreach ($requerimientos as $req) {
             $fecha = isset($req['fecha_creacion']) ? date('d/m/Y H:i', strtotime($req['fecha_creacion'])) : 'N/A';
+            $fechaEntrega = !empty($req['fecha_entrega']) ? date('d/m/Y', strtotime($req['fecha_entrega'])) : 'Sin definir';
             $sheetDetalle->setCellValue('A' . $filaD, empty($req['proyecto']) ? 'Sin Proyecto' : $req['proyecto']);
             $sheetDetalle->setCellValue('B' . $filaD, '#TK-' . $req['id_requerimiento']);
             $sheetDetalle->setCellValue('C' . $filaD, $req['titulo']);
@@ -584,10 +621,11 @@ class RequerimientoController {
             $sheetDetalle->setCellValue('F' . $filaD, empty($req['responsable']) ? 'Sin Asignar' : $req['responsable']);
             $sheetDetalle->setCellValue('G' . $filaD, $req['solicitante']);
             $sheetDetalle->setCellValue('H' . $filaD, $fecha);
+            $sheetDetalle->setCellValue('I' . $filaD, $fechaEntrega);
             $filaD++;
         }
 
-        foreach (range('A', 'H') as $columnID) {
+        foreach (range('A', 'I') as $columnID) {
             $sheetDetalle->getColumnDimension($columnID)->setAutoSize(true);
         }
 

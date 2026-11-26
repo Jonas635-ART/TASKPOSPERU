@@ -105,6 +105,19 @@ $textoVolver = $etiquetasVolver[$accionVolver] ?? 'Volver';
                             <span class="px-2 py-0.5 <?= $bgEstadoPrincipal ?> text-[10px] font-bold rounded uppercase flex items-center gap-1">
                                 <span class="w-1.5 h-1.5 rounded-full <?= $dotEstadoPrincipal ?>"></span> <?= htmlspecialchars(ucfirst($ticket['estado'])) ?>
                             </span>
+                            <?php if (!empty($ticket['fecha_entrega'])):
+                                $hoy = date('Y-m-d');
+                                $vencido = ($estadoSeguro !== 'terminado' && $ticket['fecha_entrega'] < $hoy);
+                                $venceHoy = ($estadoSeguro !== 'terminado' && $ticket['fecha_entrega'] === $hoy);
+                                $clsEntrega = $vencido
+                                    ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                                    : ($venceHoy ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200');
+                            ?>
+                            <span class="px-2 py-0.5 <?= $clsEntrega ?> text-[10px] font-bold rounded uppercase inline-flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                Entrega: <?= date('d/m/Y', strtotime($ticket['fecha_entrega'])) ?><?= $vencido ? ' (Vencido)' : ($venceHoy ? ' (Hoy)' : '') ?>
+                            </span>
+                            <?php endif; ?>
                         </div>
                         
                         <h1 class="text-2xl font-black text-slate-800 mb-3 leading-tight"><?= htmlspecialchars($ticket['titulo']) ?></h1>
@@ -253,6 +266,11 @@ $textoVolver = $etiquetasVolver[$accionVolver] ?? 'Volver';
                                     <option value="alta" <?= $ticket['prioridad'] === 'alta' ? 'selected' : '' ?>>Alta</option>
                                     <option value="critica" <?= $ticket['prioridad'] === 'critica' ? 'selected' : '' ?>>Crítica</option>
                                 </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase">Fecha de Entrega</label>
+                                <input type="date" id="inputFechaEntrega" value="<?= htmlspecialchars($ticket['fecha_entrega'] ?? '') ?>" <?= $usuario['rol'] === 'cliente' ? 'disabled' : '' ?> class="w-full bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-700 rounded-lg p-2 outline-none focus:border-indigo-500">
                             </div>
 
                             <?php if ($usuario['rol'] !== 'cliente'): ?>

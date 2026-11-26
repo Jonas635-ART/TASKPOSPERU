@@ -178,24 +178,31 @@ if (!isset($requerimientos)) $requerimientos = [];
                         </div>
                     </div>
 
-                    <!-- Prioridad -->
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Prioridad de Negocio <span class="text-rose-500">*</span></label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2">
-                                <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    <!-- Prioridad y Fecha de Entrega -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Prioridad de Negocio <span class="text-rose-500">*</span></label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2">
+                                    <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <select name="prioridad" required class="w-full pl-9 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 appearance-none focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition font-medium truncate">
+                                    <option value="baja">Baja - Consulta general o mejora (No bloquea)</option>
+                                    <option value="media" selected>Media - Falla parcial (Trabajo posible)</option>
+                                    <option value="alta">Alta - Falla total (Bloqueo de trabajo)</option>
+                                    <option value="critica">Crítica - Afectación masiva / Caída de sistema</option>
+                                </select>
+                                <svg class="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
                                 </svg>
-                            </span>
-                            <select name="prioridad" required class="w-full pl-9 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 appearance-none focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition font-medium truncate">
-                                <option value="baja">Baja - Consulta general o mejora (No bloquea)</option>
-                                <option value="media" selected>Media - Falla parcial (Trabajo posible)</option>
-                                <option value="alta">Alta - Falla total (Bloqueo de trabajo)</option>
-                                <option value="critica">Crítica - Afectación masiva / Caída de sistema</option>
-                            </select>
-                            <svg class="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
-                            </svg>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Fecha de Entrega <span class="text-slate-400 font-normal">(Opcional)</span></label>
+                            <input type="date" name="fecha_entrega" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition font-medium">
                         </div>
                     </div>
 
@@ -289,6 +296,9 @@ if (!isset($requerimientos)) $requerimientos = [];
                                         <?= !empty($req['responsable']) ? 'Asignado: ' . htmlspecialchars($req['responsable']) : 'En evaluación' ?>
                                     </p>
                                     <p class="text-[11px] text-slate-400"><?= date('d M Y · h:i A', strtotime($req['fecha_creacion'])) ?></p>
+                                    <?php if (!empty($req['fecha_entrega'])): ?>
+                                        <p class="text-[11px] font-semibold text-indigo-600 mt-0.5">Entrega: <?= date('d M Y', strtotime($req['fecha_entrega'])) ?></p>
+                                    <?php endif; ?>
                                 </div>
                                 <a href="index.php?action=ver_ticket&id=<?= $req['id_requerimiento'] ?>"
                                     class="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 text-slate-700 text-xs font-semibold rounded-md shadow-sm transition inline-flex items-center gap-1.5 shrink-0">
@@ -370,6 +380,9 @@ if (!isset($requerimientos)) $requerimientos = [];
                                     <td class="p-4 align-top text-xs">
                                         <p class="font-medium text-slate-800"><?= date('d M Y', strtotime($req['fecha_creacion'])) ?></p>
                                         <p class="text-slate-400 mt-0.5"><?= date('h:i A', strtotime($req['fecha_creacion'])) ?></p>
+                                        <?php if (!empty($req['fecha_entrega'])): ?>
+                                            <p class="text-indigo-600 font-semibold mt-1">Entrega: <?= date('d M Y', strtotime($req['fecha_entrega'])) ?></p>
+                                        <?php endif; ?>
                                     </td>
 
                                     <!-- Estado -->

@@ -369,6 +369,18 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
                                         <p class="text-[11px] text-slate-500 truncate mt-0.5" title="<?= htmlspecialchars($req['descripcion_tecnica']) ?>">
                                             <?= htmlspecialchars($req['descripcion_tecnica']) ?>
                                         </p>
+                                        <?php if (!empty($req['fecha_entrega'])):
+                                            $hoy = date('Y-m-d');
+                                            $vencido = ($estado !== 'terminado' && $req['fecha_entrega'] < $hoy);
+                                            $venceHoy = ($estado !== 'terminado' && $req['fecha_entrega'] === $hoy);
+                                            $clsFecha = $vencido
+                                                ? 'text-rose-600 bg-rose-50 border-rose-200'
+                                                : ($venceHoy ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-indigo-600 bg-indigo-50 border-indigo-100');
+                                        ?>
+                                            <span class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold <?= $clsFecha ?>">
+                                                Entrega: <?= date('d/m/Y', strtotime($req['fecha_entrega'])) ?>
+                                            </span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="p-4 align-middle">
                                         <p class="font-semibold text-slate-700 text-xs"><?= htmlspecialchars($req['solicitante']) ?></p>

@@ -17,22 +17,22 @@ class Requerimiento {
     }
 
     // Guardar un nuevo ticket según el nuevo esquema
-    public function registrar($id_proyecto, $titulo, $descripcion_tecnica, $prioridad, $id_solicitante) {
+    public function registrar($id_proyecto, $titulo, $descripcion_tecnica, $prioridad, $id_solicitante, $fecha_entrega = null) {
         try {
             // El secreto está en el RETURNING id_requerimiento al final
-            $sql = "INSERT INTO requerimientos (id_proyecto, titulo, descripcion_tecnica, prioridad, estado, id_solicitante, fecha_creacion) 
-                    VALUES (:id_proyecto, :titulo, :desc, :prioridad, 'pendiente', :id_solicitante, NOW()) 
+            $sql = "INSERT INTO requerimientos (id_proyecto, titulo, descripcion_tecnica, prioridad, estado, id_solicitante, fecha_entrega, fecha_creacion)
+                    VALUES (:id_proyecto, :titulo, :desc, :prioridad, 'pendiente', :id_solicitante, :fecha_entrega, NOW())
                     RETURNING id_requerimiento";
-                    
+
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([
-                ':id_proyecto' => $id_proyecto, // PostgreSQL maneja automáticamente los nulos aquí
-                ':titulo' => trim($titulo),
-                ':desc' => trim($descripcion_tecnica),
-                ':prioridad' => strtolower(trim($prioridad)),
-                ':id_solicitante' => (int)$id_solicitante
-            ]);
-            
+            $stmt->bindValue(':id_proyecto', $id_proyecto, $id_proyecto === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+            $stmt->bindValue(':titulo', trim($titulo), PDO::PARAM_STR);
+            $stmt->bindValue(':desc', trim($descripcion_tecnica), PDO::PARAM_STR);
+            $stmt->bindValue(':prioridad', strtolower(trim($prioridad)), PDO::PARAM_STR);
+            $stmt->bindValue(':id_solicitante', (int)$id_solicitante, PDO::PARAM_INT);
+            $stmt->bindValue(':fecha_entrega', $fecha_entrega, $fecha_entrega === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+            $stmt->execute();
+
             $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
             
             // Si todo salió bien, devolvemos el número de ID directamente
@@ -112,7 +112,7 @@ class Requerimiento {
     // Listar TODOS los tickets del sistema (Explícito para evitar pérdida de columnas)
     public function listarTodos() {
         try {
-            $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado, r.fecha_creacion, 
+            $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado, r.fecha_creacion, r.fecha_entrega, 
                            u1.nombre AS solicitante, u1.correo AS correo_solicitante, u1.rol AS rol_solicitante, 
                            u2.nombre AS responsable,
                            p.nombre_proyecto AS proyecto
@@ -162,12 +162,20 @@ class Requerimiento {
         } catch (PDOException $e) { return []; }
     }
 
-    // Si $nueva_prioridad es null se conserva la prioridad actual (p. ej. al mover en el Kanban)
-    public function actualizarEstadoTicket($id_requerimiento, $nuevo_estado, $nueva_prioridad = null) {
+    // Si $nueva_prioridad es null se conserva la prioridad actual (p. ej. al mover en el Kanban).
+    // Si $actualizarFechaEntrega es true se actualiza fecha_entrega (puede ser null para limpiarla).
+    public function actualizarEstadoTicket($id_requerimiento, $nuevo_estado, $nueva_prioridad = null, $fecha_entrega = null, $actualizarFechaEntrega = false) {
         try {
-            $sql = "UPDATE requerimientos SET estado = :estado, prioridad = COALESCE(:prioridad, prioridad), fecha_actualizacion = CURRENT_TIMESTAMP WHERE id_requerimiento = :id";
+            $setFecha = $actualizarFechaEntrega ? ", fecha_entrega = :fecha_entrega" : "";
+            $sql = "UPDATE requerimientos SET estado = :estado, prioridad = COALESCE(:prioridad, prioridad){$setFecha}, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id_requerimiento = :id";
             $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([':estado' => $nuevo_estado, ':prioridad' => $nueva_prioridad, ':id' => $id_requerimiento]);
+            $stmt->bindValue(':estado', $nuevo_estado, PDO::PARAM_STR);
+            $stmt->bindValue(':prioridad', $nueva_prioridad, $nueva_prioridad === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+            if ($actualizarFechaEntrega) {
+                $stmt->bindValue(':fecha_entrega', $fecha_entrega, $fecha_entrega === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+            }
+            $stmt->bindValue(':id', (int)$id_requerimiento, PDO::PARAM_INT);
+            return $stmt->execute();
         } catch (PDOException $e) { return false; }
     }
 
@@ -238,7 +246,7 @@ class Requerimiento {
     // Obtener tickets formateados para el tablero Kanban con conteo de subtareas
     public function listarParaKanban() {
         try {
-            $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado, r.fecha_creacion,
+            $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado, r.fecha_creacion, r.fecha_entrega,
                            u1.nombre AS solicitante, u1.rol AS rol_solicitante,
                            u2.nombre AS responsable,
                            p.nombre_proyecto AS proyecto,
@@ -288,7 +296,7 @@ class Requerimiento {
     // Tickets que pertenecen a un proyecto
     public function listarPorProyecto($id_proyecto) {
         try {
-            $sql = "SELECT r.id_requerimiento, r.titulo, r.prioridad, r.estado, r.fecha_creacion,
+            $sql = "SELECT r.id_requerimiento, r.titulo, r.prioridad, r.estado, r.fecha_creacion, r.fecha_entrega,
                            u2.nombre AS responsable,
                            p.nombre_proyecto AS proyecto
                     FROM requerimientos r
@@ -345,7 +353,7 @@ class Requerimiento {
     public function listarAsignadosA($id_usuario) {
         try {
             $sql = "SELECT r.id_requerimiento, r.titulo, r.descripcion_tecnica, r.prioridad, r.estado,
-                           r.fecha_creacion, r.fecha_actualizacion,
+                           r.fecha_creacion, r.fecha_actualizacion, r.fecha_entrega,
                            u1.nombre AS solicitante, u1.rol AS rol_solicitante,
                            p.nombre_proyecto AS proyecto,
                            (SELECT COUNT(*) FROM subtareas s WHERE s.id_requerimiento = r.id_requerimiento) AS total_subtareas,

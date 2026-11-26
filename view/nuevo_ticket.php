@@ -162,6 +162,14 @@ $labelRol = $esAdmin ? 'Admin' : $usuario['correo'];
                                 <?php endforeach; ?>
                             </select>
                         </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">
+                                Fecha de Entrega <span class="text-slate-400 font-normal text-xs">(Opcional)</span>
+                            </label>
+                            <input type="date" name="fecha_entrega"
+                                   class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition font-medium text-slate-700">
+                        </div>
                     </div>
 
                     <div class="border-t border-slate-200 pt-4">

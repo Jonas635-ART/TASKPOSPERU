@@ -195,6 +195,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const estado = (t.estado || 'pendiente').toLowerCase();
         const proyecto = (t.proyecto || '').toLowerCase();
         const responsable = t.responsable || '';
+        const fechaEntrega = t.fecha_entrega || '';
+        let fechaEntregaHtml = '';
+        if (fechaEntrega) {
+            const hoy = new Date().toISOString().slice(0, 10);
+            const vencido = estado !== 'terminado' && fechaEntrega < hoy;
+            const venceHoy = estado !== 'terminado' && fechaEntrega === hoy;
+            const clsFecha = vencido
+                ? 'text-rose-600 bg-rose-50 border-rose-200'
+                : (venceHoy ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-indigo-600 bg-indigo-50 border-indigo-100');
+            const [y, m, d] = fechaEntrega.split('-');
+            fechaEntregaHtml = `<span class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold ${clsFecha}">Entrega: ${escapeHtml(`${d}/${m}/${y}`)}</span>`;
+        }
 
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition-colors duration-700 group bg-indigo-50/70';
@@ -212,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="text-[11px] text-slate-500 truncate mt-0.5" title="${escapeHtml(t.descripcion_tecnica)}">
                     ${escapeHtml(t.descripcion_tecnica)}
                 </p>
+                ${fechaEntregaHtml}
             </td>
             <td class="p-4 align-middle">
                 <p class="font-semibold text-slate-700 text-xs">${escapeHtml(t.solicitante)}</p>

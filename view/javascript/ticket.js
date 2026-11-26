@@ -169,11 +169,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const idTicket = btnActualizarEstado.getAttribute('data-ticket');
             const estado = document.getElementById('selEstado').value;
             const prioridad = document.getElementById('selPrioridad').value;
+            const inputFechaEntrega = document.getElementById('inputFechaEntrega');
 
             const formData = new FormData();
             formData.append('id_requerimiento', idTicket);
             formData.append('estado', estado);
             formData.append('prioridad', prioridad);
+            if (inputFechaEntrega) {
+                formData.append('fecha_entrega', inputFechaEntrega.value);
+            }
 
             btnActualizarEstado.textContent = 'Guardando...';
 

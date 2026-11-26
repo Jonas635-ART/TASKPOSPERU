@@ -142,6 +142,10 @@ $filtros = [
                             <dd class="text-slate-700 font-medium truncate text-right"><?= htmlspecialchars($a['solicitante']) ?></dd>
                             <dt class="text-slate-400 font-semibold">Creado</dt>
                             <dd class="text-slate-700 font-medium text-right"><?= date('d/m/Y', strtotime($a['fecha_creacion'])) ?></dd>
+                            <dt class="text-slate-400 font-semibold">Entrega</dt>
+                            <dd class="font-medium text-right <?= !empty($a['fecha_entrega']) && $est !== 'terminado' && $a['fecha_entrega'] < date('Y-m-d') ? 'text-rose-600 font-bold' : 'text-slate-700' ?>">
+                                <?= !empty($a['fecha_entrega']) ? date('d/m/Y', strtotime($a['fecha_entrega'])) : '<span class="italic text-slate-400">Sin definir</span>' ?>
+                            </dd>
                         </dl>
 
                         <?php if ($total > 0): ?>
