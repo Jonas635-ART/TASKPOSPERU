@@ -18,7 +18,7 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
     <link rel="stylesheet" href="view/css/developer.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body class="flex h-screen overflow-hidden text-slate-800 antialiased">
+<body class="flex min-h-dvh lg:h-dvh lg:overflow-hidden text-slate-800 antialiased">
 
     <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar-bg w-64 flex-shrink-0 flex flex-col h-full text-slate-300 transition-transform duration-300 fixed inset-y-0 left-0 z-50 transform -translate-x-full lg:static lg:translate-x-0"> 
@@ -79,9 +79,9 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
     </aside>
 
     <!-- CONTENIDO PRINCIPAL -->
-    <main class="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-slate-50 relative w-full">
+    <main class="flex-1 flex flex-col min-w-0 lg:h-full lg:overflow-hidden bg-slate-50 relative w-full">
         <!-- Top Navbar -->
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-sm z-10 gap-2 sm:gap-4">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 shrink-0 shadow-sm sticky top-0 z-20 lg:static gap-2 sm:gap-4">
             
             <!-- Botón Menú Hamburguesa (Solo Móvil) -->
             <button id="btnAbrirMenu" class="lg:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 shrink-0 -ml-1">
@@ -97,7 +97,7 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
                 </div>
             </div>
             
-            <div class="flex items-center gap-2 sm:gap-4 ml-2 sm:ml-6 shrink-0">
+            <div class="flex items-center gap-2 sm:gap-4 ml-1 sm:ml-4 shrink-0">
             <div class="hidden lg:flex items-center gap-3">
                 <!-- Indicador: En Proceso -->
                 <span id="badgeEnProceso" class="<?= empty($enProceso) ? 'hidden ' : '' ?>flex items-center gap-1.5 px-2.5 py-1 rounded bg-orange-50 text-orange-600 border border-orange-100 text-xs font-semibold">
@@ -110,24 +110,24 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
                 </span>
             </div>
             
-            <div class="h-6 w-px bg-slate-200 mx-2"></div>
+            <div class="hidden lg:block h-6 w-px bg-slate-200 mx-1"></div>
             
             <!-- Campana de Notificaciones -->
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-2 sm:gap-4">
     
     <!-- Contenedor Relativo para la Campana y el Menú Desplegable -->
     <div class="relative">
-        <button id="btnNotificaciones" class="relative text-slate-400 hover:text-slate-600 transition focus:outline-none" title="Ver Notificaciones">
+        <button id="btnNotificaciones" class="relative p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition focus:outline-none" title="Ver Notificaciones" aria-label="Ver Notificaciones">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
             
             <!-- El punto rojo SOLO aparece si hay notificaciones nuevas -->
             <?php if (!empty($notificaciones)): ?>
-                <span class="absolute -top-1 -right-1 w-2 h-2 bg-rose-500 rounded-full border border-white animate-pulse"></span>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full border border-white animate-pulse"></span>
             <?php endif; ?>
         </button>
 
         <!-- Mini Ventana Desplegable -->
-        <div id="menuNotificaciones" class="hidden absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden z-50 transform origin-top-right transition-all">
+        <div id="menuNotificaciones" class="hidden fixed inset-x-3 top-16 sm:inset-auto sm:absolute sm:right-0 sm:top-full sm:mt-3 w-auto sm:w-80 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden z-50 transform origin-top-right transition-all">
             <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                 <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Notificaciones</span>
                 <?php if (!empty($notificaciones)): ?>
@@ -166,20 +166,21 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
         </div>
     </div>
     
-    <!-- Botón Nuevo Ticket (El tuyo, intacto) -->
-    <a href="index.php?action=nuevo_ticket" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-2 whitespace-nowrap">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-        Nuevo Ticket
+    <!-- Botón Nuevo Ticket -->
+    <a href="index.php?action=nuevo_ticket" class="px-2.5 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span class="hidden sm:inline">Nuevo Ticket</span>
+        <span class="sm:hidden">Nuevo</span>
     </a>
 </div>
         </div>
         </header>
 
         <!-- Area Scrollable -->
-        <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+        <div class="lg:flex-1 lg:overflow-y-auto p-4 pb-12 sm:p-6 custom-scrollbar">
             <!-- Header Título -->
-            <div class="mb-6">
-                <h1 class="text-2xl font-black text-slate-800">Gestión de Requerimientos y Tareas</h1>
+            <div class="mb-5 sm:mb-6">
+                <h1 class="text-xl sm:text-2xl font-black text-slate-800">Gestión de Requerimientos y Tareas</h1>
                 <p class="text-sm text-slate-500 mt-1 max-w-2xl">Supervisa, asigna y da seguimiento a los tickets del equipo en tiempo real con trazabilidad integral y métricas de desempeño.</p>
                 <?php if (strtolower($usuario['rol'] ?? '') === 'admin'): ?>
                 <div class="flex flex-wrap items-center gap-2 mt-3">
@@ -196,7 +197,7 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
             </div>
 
             <!-- Dashboard KPIs -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
                 <!-- Total -->
                 <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
                     <div class="flex justify-between items-start mb-4">
@@ -317,13 +318,13 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
             <!-- Tabla DataGrid -->
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
                 <!-- Filtros Tabla -->
-                <div class="p-4 border-b border-slate-200 flex flex-wrap gap-3 items-center justify-between bg-slate-50/50">
-                    <div class="flex flex-wrap gap-2">
-                        <div class="relative">
+                <div class="p-3.5 sm:p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+                    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <div class="relative w-full sm:w-52">
                             <svg class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            <input type="text" id="filterTable" placeholder="Buscar por ID, título..." class="pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-48 shadow-sm">
+                            <input type="text" id="filterTable" placeholder="Buscar por ID, título..." class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none shadow-sm">
                         </div>
-                        <select class="py-1.5 px-3 bg-white border border-slate-300 rounded-md text-xs text-slate-600 shadow-sm outline-none focus:border-indigo-500 cursor-pointer">
+                        <select class="w-full sm:w-auto py-1.5 px-3 bg-white border border-slate-300 rounded-md text-xs text-slate-600 shadow-sm outline-none focus:border-indigo-500 cursor-pointer">
                             <option>Estado: Todos</option>
                             <option>Pendiente</option>
                             <option>En Proceso</option>

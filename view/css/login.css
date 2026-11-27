@@ -11,8 +11,8 @@ body {
     background-color: #f8f9fa;
     display: flex;
     justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    align-items: stretch;
+    min-height: 100dvh;
 }
 
 /* Contenedor Principal */
@@ -20,9 +20,8 @@ body {
     display: flex;
     width: 100%;
     max-width: 1400px;
-    height: 100vh;
+    min-height: 100dvh;
     background: #ffffff;
-    overflow: hidden;
 }
 
 /* Panel Izquierdo Oscuro */
@@ -34,7 +33,9 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    position: relative;
+    position: sticky;
+    top: 0;
+    height: 100dvh;
     overflow: hidden;
 }
 
@@ -163,7 +164,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 4rem 8rem;
+    padding: 3rem 5rem;
     background: #ffffff;
 }
 
@@ -329,7 +330,29 @@ body {
 /* Responsive */
 @media (max-width: 1024px) {
     .login-left { display: none; }
-    .login-right { flex: 1; padding: 2rem; }
+    .login-right {
+        flex: 1;
+        justify-content: flex-start;
+        padding: 2rem 1.5rem 3rem;
+    }
+    .login-right > .login-form-container > p {
+        margin-bottom: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .login-right {
+        padding: 1.5rem 1.125rem 3rem;
+    }
+    .login-right h2 {
+        font-size: 1.6rem;
+    }
+    .form-group {
+        margin-bottom: 18px;
+    }
+    .right-footer {
+        margin-top: 32px;
+    }
 }
 
 /* Separador sutil */

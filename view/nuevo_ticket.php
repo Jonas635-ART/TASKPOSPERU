@@ -26,7 +26,7 @@ $labelRol = $esAdmin ? 'Admin' : $usuario['correo'];
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="view/css/developer.css">
 </head>
-<body class="flex h-screen overflow-hidden text-slate-800 antialiased bg-slate-50">
+<body class="flex min-h-dvh lg:h-dvh lg:overflow-hidden text-slate-800 antialiased bg-slate-50">
 
     <!-- SIDEBAR DINÁMICO  -->
     <aside id="sidebar" class="sidebar-bg w-64 flex-shrink-0 flex flex-col h-full text-slate-300 transition-transform duration-300 fixed inset-y-0 left-0 z-50 transform -translate-x-full lg:static lg:translate-x-0"> 
@@ -87,25 +87,27 @@ $labelRol = $esAdmin ? 'Admin' : $usuario['correo'];
     </aside>
 
     <!-- CONTENIDO PRINCIPAL (Formulario) -->
-    <main class="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-slate-50 relative w-full">
+    <main class="flex-1 flex flex-col min-w-0 lg:h-full lg:overflow-hidden bg-slate-50 relative w-full">
         <!-- Top Navbar -->
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-sm z-10 gap-2 sm:gap-4">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 shrink-0 shadow-sm sticky top-0 z-20 lg:static gap-2 sm:gap-4">
             
             <!-- Botón Menú Hamburguesa (Solo Móvil) -->
             <button id="btnAbrirMenu" class="lg:hidden text-slate-500 hover:text-indigo-600 focus:outline-none p-1 shrink-0 -ml-1">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-            </button>   <h1 class="text-lg font-black text-slate-800 tracking-tight">Registrar Nuevo Ticket</h1>
+            </button>
+            <h1 class="text-base sm:text-lg font-black text-slate-800 tracking-tight truncate flex-1 min-w-0">Registrar Nuevo Ticket</h1>
             
-            <a href="index.php?action=dashboard" class="text-sm font-semibold text-slate-500 hover:text-indigo-600 transition flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                Volver al Panel
+            <a href="index.php?action=dashboard" class="text-xs sm:text-sm font-semibold text-slate-500 hover:text-indigo-600 transition flex items-center gap-1 shrink-0 whitespace-nowrap">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                <span class="hidden sm:inline">Volver al Panel</span>
+                <span class="sm:hidden">Volver</span>
             </a>
         </header>
 
         <!-- Área del Formulario Scrollable -->
-        <div class="flex-1 overflow-x-hidden overflow-y-auto p-6 flex justify-center custom-scrollbar">
+        <div class="lg:flex-1 overflow-x-hidden lg:overflow-y-auto p-3.5 pb-12 sm:p-6 flex justify-center custom-scrollbar">
             
-            <div class="w-full max-w-2xl bg-white rounded-xl border border-slate-200 shadow-sm p-8 mt-4 h-fit mb-10">
+            <div class="w-full max-w-2xl bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-8 mt-2 sm:mt-4 h-fit mb-6 sm:mb-10">
                 <form action="index.php?action=guardar_ticket" method="POST" enctype="multipart/form-data" class="space-y-6">
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

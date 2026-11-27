@@ -69,37 +69,37 @@ $textoVolver = $etiquetasVolver[$accionVolver] ?? 'Volver';
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="view/css/ticket.css">
 </head>
-<body class="flex h-screen overflow-hidden text-slate-800 antialiased bg-[#f9fafb]">
+<body class="flex min-h-dvh lg:h-dvh lg:overflow-hidden text-slate-800 antialiased bg-[#f9fafb]">
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden">
+    <main class="flex-1 flex flex-col min-w-0 lg:h-full lg:overflow-hidden">
         
-        <header class="h-14 border-b border-slate-200 flex items-center justify-between px-6 shrink-0 bg-white">
-            <div class="flex items-center gap-3 text-sm text-slate-500 font-medium">
+        <header class="h-14 border-b border-slate-200 flex items-center justify-between gap-2 px-3 sm:px-6 shrink-0 bg-white sticky top-0 z-20 lg:static">
+            <div class="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-slate-500 font-medium min-w-0">
                 <img src="view/img/logo.jpg" alt="PosPerú" class="w-7 h-7 rounded-md object-cover shrink-0">
-                <a href="<?= htmlspecialchars($urlVolver) ?>" class="text-indigo-600 hover:underline flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                <a href="<?= htmlspecialchars($urlVolver) ?>" class="text-indigo-600 hover:underline flex items-center gap-1 shrink-0 whitespace-nowrap">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     <?= htmlspecialchars($textoVolver) ?>
                 </a>
-                <span>/</span> <span>Ticket</span> <span>/</span> <span class="text-slate-800">TK-<?= htmlspecialchars($ticket['id_requerimiento']) ?></span>
+                <span class="hidden sm:inline">/</span> <span class="hidden sm:inline">Ticket</span> <span>/</span> <span class="text-slate-800 font-semibold truncate">TK-<?= htmlspecialchars($ticket['id_requerimiento']) ?></span>
             </div>
-            <div class="flex items-center gap-3">
-                <span class="text-xs font-semibold text-slate-500"><?= htmlspecialchars($usuario['nombre']) ?></span>
-                <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold uppercase">
+            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                <span class="hidden sm:inline text-xs font-semibold text-slate-500 truncate max-w-[140px]"><?= htmlspecialchars($usuario['nombre']) ?></span>
+                <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold uppercase shrink-0">
                     <?= substr($usuario['nombre'], 0, 2) ?>
                 </div>
             </div>
         </header>
 
         <!-- Contenedor Principal con Scroll -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
-            <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:flex-1 lg:overflow-y-auto custom-scrollbar p-3.5 pb-12 sm:p-6">
+            <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 
                 <!-- COLUMNA IZQUIERDA -->
-                <div class="lg:col-span-2 space-y-6">
+                <div class="lg:col-span-2 space-y-4 sm:space-y-6">
                     
                     <!-- Tarjeta Principal -->
-                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm">
                         <div class="flex flex-wrap items-center gap-2 mb-4">
                             <span class="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded uppercase">Prioridad: <?= htmlspecialchars($ticket['prioridad']) ?></span>
                             <span class="px-2 py-0.5 <?= $bgEstadoPrincipal ?> text-[10px] font-bold rounded uppercase flex items-center gap-1">
@@ -120,7 +120,7 @@ $textoVolver = $etiquetasVolver[$accionVolver] ?? 'Volver';
                             <?php endif; ?>
                         </div>
                         
-                        <h1 class="text-2xl font-black text-slate-800 mb-3 leading-tight"><?= htmlspecialchars($ticket['titulo']) ?></h1>
+                        <h1 class="text-xl sm:text-2xl font-black text-slate-800 mb-3 leading-tight"><?= htmlspecialchars($ticket['titulo']) ?></h1>
                         <div class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap"><?= htmlspecialchars($ticket['descripcion_tecnica']) ?></div>
                     </div>
 

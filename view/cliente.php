@@ -54,7 +54,7 @@ if (!isset($requerimientos)) $requerimientos = [];
                     </button>
 
                     <!-- Mini Ventana Desplegable -->
-                    <div id="menuNotificaciones" class="hidden absolute -right-14 sm:right-0 mt-3 w-[calc(100vw-1.5rem)] max-w-xs sm:w-80 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.12)] border border-slate-200 overflow-hidden z-50 transform origin-top-right transition-all">
+                    <div id="menuNotificaciones" class="hidden fixed inset-x-3 top-16 sm:inset-auto sm:absolute sm:right-0 sm:top-full sm:mt-3 w-auto sm:w-80 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.12)] border border-slate-200 overflow-hidden z-50 transform origin-top-right transition-all">
                         <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                             <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Notificaciones</span>
                             <?php if (!empty($notificaciones)): ?>
@@ -130,7 +130,7 @@ if (!isset($requerimientos)) $requerimientos = [];
         </div>
     </nav>
 
-    <main class="max-w-6xl mx-auto p-3 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
+    <main class="max-w-6xl mx-auto p-3 pb-12 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
 
         <!-- Hero Section -->
         <div class="bg-hero-gradient rounded-2xl p-5 sm:p-8 border border-indigo-100 shadow-sm relative overflow-hidden">

@@ -33,14 +33,14 @@ $filtros = [
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="view/css/developer.css">
 </head>
-<body class="flex h-dvh overflow-hidden text-slate-800 antialiased bg-slate-50">
+<body class="flex min-h-dvh lg:h-dvh lg:overflow-hidden text-slate-800 antialiased bg-slate-50">
 
     <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
-    <main class="flex-1 min-w-0 flex flex-col h-full overflow-hidden relative">
+    <main class="flex-1 min-w-0 flex flex-col lg:h-full lg:overflow-hidden relative">
 
         <!-- Top Navbar -->
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center gap-3 px-4 lg:px-6 shrink-0 shadow-sm z-10">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center gap-3 px-4 lg:px-6 shrink-0 shadow-sm sticky top-0 z-20 lg:static">
             <button id="btnMenu" type="button" class="lg:hidden -ml-1 p-2 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>
@@ -60,7 +60,7 @@ $filtros = [
                         <span class="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full border border-white animate-pulse"></span>
                     <?php endif; ?>
                 </button>
-                <div id="menuNotificaciones" class="hidden absolute right-0 mt-3 w-[calc(100vw-2rem)] max-w-xs sm:w-80 sm:max-w-none bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden z-50">
+                <div id="menuNotificaciones" class="hidden fixed inset-x-3 top-16 sm:inset-auto sm:absolute sm:right-0 sm:top-full sm:mt-3 w-auto sm:w-80 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden z-50">
                     <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                         <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Notificaciones</span>
                         <?php if (!empty($notificaciones)): ?>
@@ -88,7 +88,7 @@ $filtros = [
         </header>
 
         <!-- Contenido -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-6">
+        <div class="lg:flex-1 lg:overflow-y-auto custom-scrollbar p-4 pb-12 lg:p-6">
             <div class="mb-5">
                 <h1 class="text-xl lg:text-2xl font-black text-slate-800">Mis asignaciones</h1>
                 <p class="text-sm text-slate-500">Tickets en los que eres el responsable, <?= htmlspecialchars(explode(' ', $usuario['nombre'])[0]) ?>.</p>

@@ -25,7 +25,7 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
     <!-- Enlace al nuevo CSS de proyectos -->
     <link rel="stylesheet" href="view/css/proyectos.css">
 </head>
-<body class="flex h-screen overflow-hidden text-slate-800 antialiased bg-slate-50">
+<body class="flex min-h-dvh lg:h-dvh lg:overflow-hidden text-slate-800 antialiased bg-slate-50">
 
     <!-- SIDEBAR UNIFICADO -->
     <aside id="sidebar" class="sidebar-bg w-64 flex-shrink-0 flex flex-col h-full text-slate-300 transition-transform duration-300 fixed inset-y-0 left-0 z-50 transform -translate-x-full lg:static lg:translate-x-0"> 
@@ -85,9 +85,9 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
         </div>
     </aside>
     <!-- CONTENIDO PRINCIPAL -->
-    <main class="flex-1 flex flex-col h-full min-w-0 overflow-hidden bg-slate-50 relative w-full">
+    <main class="flex-1 flex flex-col min-w-0 lg:h-full lg:overflow-hidden bg-slate-50 relative w-full">
         <!-- Top Navbar -->
-        <header class="min-h-[4rem] bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 py-2.5 shrink-0 shadow-sm z-10 gap-2 sm:gap-4">
+        <header class="min-h-[4rem] bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 py-2.5 shrink-0 shadow-sm sticky top-0 z-20 lg:static gap-2 sm:gap-4">
             
             <div class="flex items-center gap-2 sm:gap-3 min-w-0">
                 <!-- Botón Menú Hamburguesa (Solo Móvil) -->
@@ -112,7 +112,7 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
         </button>
 
         <!-- Mini Ventana Desplegable -->
-        <div id="menuNotificaciones" class="hidden absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden z-50 transform origin-top-right transition-all">
+        <div id="menuNotificaciones" class="hidden fixed inset-x-3 top-16 sm:inset-auto sm:absolute sm:right-0 sm:top-full sm:mt-3 w-auto sm:w-80 bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden z-50 transform origin-top-right transition-all">
             <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                 <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Notificaciones</span>
                 <?php if (!empty($notificaciones)): ?>
@@ -186,7 +186,7 @@ $labelRol = $esAdmin ? 'Admin' : 'Developer';
         </div>
 
         <!-- Lista de Proyectos Responsive -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar">
+        <div class="lg:flex-1 lg:overflow-y-auto custom-scrollbar pb-12 lg:pb-6">
             <?php if (empty($proyectos)): ?>
                 <div class="p-8 text-center text-slate-500 text-sm">No hay proyectos registrados aún.</div>
             <?php else: ?>

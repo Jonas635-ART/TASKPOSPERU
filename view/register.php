@@ -147,6 +147,7 @@
             if (check.checked) {
                 grupo.style.display = 'block';
                 inputCodigo.focus();
+                grupo.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             } else {
                 grupo.style.display = 'none';
                 inputCodigo.value = '';
